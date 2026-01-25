@@ -1,3 +1,22 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "property-1",
+      "description": "Modern apartment building exterior",
+      "imageUrl": "https://images.unsplash.com/photo-1624204386084-dd8c05e32226?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxtb2Rlcm4lMjBhcGFydG1lbnR8ZW58MHx8fHwxNzY5MjY0NTkyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "modern apartment"
+    },
+    {
+      "id": "property-2",
+      "description": "Luxury loft building at dusk",
+      "imageUrl": "https://images.unsplash.com/photo-1550567418-1bd5c7712337?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxsdXh1cnklMjBsb2Z0fGVufDB8fHx8MTc2OTM0NzQ1NHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "luxury loft"
+    },
+    {
+      "id": "property-3",
+      "description": "Contemporary apartment complex with blue accents",
+      "imageUrl": "https://images.unsplash.com/photo-1614115863913-b04024ec4ed1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxhcGFydG1lbnQlMjBjb21wbGV4fGVufDB8fHx8MTc2OTM0NzQ1NHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "apartment complex"
+    }
+  ]
 }
