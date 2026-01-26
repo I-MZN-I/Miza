@@ -75,11 +75,3 @@ export const properties: Property[] = [
     ],
   },
 ];
-
-export const financialChartData = [
-  { month: "Jan", income: 24500, expenses: 8500 },
-  { month: "Feb", income: 24500, expenses: 9200 },
-  { month: "Mar", income: 24500, expenses: 8800 },
-  { month: "Apr", income: 24500, expenses: 9500 },
-  { month: "May", income: 24500, expenses: 8500 },
-];

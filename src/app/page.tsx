@@ -1,5 +1,4 @@
 import { AnalyticsBar } from '@/components/dashboard/analytics-bar';
-import { FinancialChart } from '@/components/dashboard/financial-chart';
 import { PropertyList } from '@/components/dashboard/property-list';
 
 export default function DashboardPage() {
@@ -10,7 +9,6 @@ export default function DashboardPage() {
         <p className="text-muted-foreground">Welcome to your Smart Overview</p>
       </header>
       <AnalyticsBar />
-      <FinancialChart />
       <PropertyList />
     </div>
   );
