@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { PropertyCard } from './property-card';
 import { PropertyDetailView } from './property-detail-view';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import type { Property, WithId } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
 
@@ -48,7 +49,29 @@ export function PropertyList({ properties, isLoading }: { properties: WithId<Pro
       </div>
       <Dialog open={!!selectedProperty} onOpenChange={(isOpen) => !isOpen && setSelectedProperty(null)}>
         <DialogContent className="glassmorphism sm:max-w-2xl h-[90vh] max-h-[1000px] flex flex-col">
-           <PropertyDetailView property={selectedProperty} />
+           {selectedProperty && (
+            <>
+              <DialogHeader>
+                <div className="flex items-start gap-4">
+                    {selectedProperty.imageURL && (
+                      <div className="relative h-20 w-20 rounded-lg overflow-hidden shrink-0 shadow-lg">
+                          <Image
+                              src={selectedProperty.imageURL}
+                              alt={selectedProperty.buildingName}
+                              fill
+                              className="object-cover"
+                          />
+                      </div>
+                    )}
+                    <div className="pt-1">
+                        <DialogTitle className="font-headline text-2xl font-bold">{selectedProperty.buildingName}</DialogTitle>
+                        <DialogDescription className="text-base">{selectedProperty.location}</DialogDescription>
+                    </div>
+                </div>
+              </DialogHeader>
+              <PropertyDetailView property={selectedProperty} />
+            </>
+           )}
         </DialogContent>
       </Dialog>
     </>
