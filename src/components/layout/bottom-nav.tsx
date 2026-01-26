@@ -31,7 +31,11 @@ export function BottomNav() {
                 isActive ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"
               )}
             >
-                <div className="relative">
+                <motion.div 
+                    className="relative"
+                    animate={isActive ? { scale: [1, 1.1, 1] } : {}}
+                    transition={isActive ? { duration: 2, repeat: Infinity, repeatType: 'reverse' } : {}}
+                >
                     <item.icon className={cn("h-5 w-5 transition-transform", isActive && "scale-110")} />
                     {isActive && 
                         <motion.div 
@@ -43,7 +47,7 @@ export function BottomNav() {
                             transition={{type: 'spring', stiffness: 300, damping: 30}}
                         />
                     }
-                </div>
+                </motion.div>
                 <span>{item.label}</span>
             </Link>
           );

@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import type { Property } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Card } from '@/components/ui/card';
-import { ArrowDown, ArrowUp, MapPin, Wallet } from 'lucide-react';
+import { ArrowDown, ArrowUp, MapPin, Wallet, Rocket } from 'lucide-react';
 import { Progress } from '../ui/progress';
 import { Skeleton } from '../ui/skeleton';
 
@@ -36,7 +36,7 @@ export function PropertyCard({ property, onSelect }: PropertyCardProps) {
 
   return (
     <div onClick={onSelect} className="block group cursor-pointer">
-        <Card className="glassmorphism overflow-hidden relative rounded-3xl p-4 flex flex-col justify-between h-96 transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:shadow-primary/20">
+        <Card className="glassmorphism overflow-hidden relative rounded-3xl p-4 flex flex-col justify-between h-80 transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:shadow-primary/20">
         {image && (
             <Image
             src={image.imageUrl}
@@ -86,8 +86,11 @@ export function PropertyCard({ property, onSelect }: PropertyCardProps) {
 
             <div className="space-y-1">
                 <div className="flex justify-between text-xs text-white/80">
-                    <span>Profitability</span>
-                    <span>{profitability.toFixed(0)}%</span>
+                    <span className="font-medium">Profitability: {profitability.toFixed(0)}%</span>
+                    <div className="flex items-center gap-1.5 font-medium" title="AI Score">
+                        <Rocket className="h-3 w-3 text-accent" />
+                        <span>{property.aiScore}</span>
+                    </div>
                 </div>
                 <Progress value={profitability} className="h-1.5 bg-white/20 [&>div]:bg-gradient-to-r [&>div]:from-primary/80 [&>div]:to-accent" />
             </div>

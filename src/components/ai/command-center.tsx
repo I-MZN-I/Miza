@@ -14,7 +14,7 @@ const actions = [
 
 function ActionButton({ icon: Icon, label }: { icon: React.ElementType, label: string }) {
     return (
-        <Button variant="outline" className="h-auto justify-start p-3 text-left bg-white/5 border-white/10 hover:bg-white/10">
+        <Button variant="outline" className="h-auto justify-start p-3 text-left bg-white/5 border-white/10 hover:bg-white/10 transition-transform hover:scale-105">
             <Icon className="mr-3 h-5 w-5 text-primary" />
             <p className="font-semibold">{label}</p>
         </Button>
