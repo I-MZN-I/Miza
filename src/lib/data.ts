@@ -9,6 +9,7 @@ export const properties: Property[] = [
     totalIncome: 7500,
     expenses: 2200,
     currentRent: 2500,
+    aiScore: 92,
     rooms: {
       count: 3,
       sizes: ['12x14 sqft', '10x12 sqft', '10x10 sqft'],
@@ -33,6 +34,7 @@ export const properties: Property[] = [
     totalIncome: 12000,
     expenses: 4500,
     currentRent: 3000,
+    aiScore: 85,
     rooms: {
       count: 4,
       sizes: ['15x15 sqft', '12x12 sqft', '10x12 sqft', '10x10 sqft'],
@@ -57,6 +59,7 @@ export const properties: Property[] = [
     totalIncome: 5000,
     expenses: 1800,
     currentRent: 2500,
+    aiScore: 78,
     rooms: {
       count: 2,
       sizes: ['14x16 sqft', '12x12 sqft'],

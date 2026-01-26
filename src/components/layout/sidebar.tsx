@@ -15,7 +15,7 @@ import {
   LayoutGrid,
   Building2,
   FileText,
-  Sparkles,
+  BrainCircuit,
   Settings,
   User,
 } from 'lucide-react';
@@ -32,10 +32,10 @@ import {
 import { Button } from '../ui/button';
 
 const menuItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutGrid },
+  { href: '/', label: 'Overview', icon: LayoutGrid },
   { href: '/properties', label: 'Properties', icon: Building2 },
   { href: '/reports', label: 'Reports', icon: FileText },
-  { href: '/ai-assistant', label: 'AI Assistant', icon: Sparkles },
+  { href: '/ai-assistant', label: 'AI Hub', icon: BrainCircuit },
   { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -81,7 +81,7 @@ export default function AppSidebar() {
                     </div>
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent side="right" align="start" className="w-56">
+            <DropdownMenuContent side="right" align="start" className="w-56 glassmorphism">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem>

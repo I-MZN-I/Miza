@@ -27,4 +27,5 @@ export type Property = {
   tenants: Tenant[];
   expenseDetails: Expense[];
   currentRent: number;
+  aiScore: number;
 };

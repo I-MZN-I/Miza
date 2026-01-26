@@ -4,11 +4,11 @@ import { Toaster } from '@/components/ui/toaster';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import AppSidebar from '@/components/layout/sidebar';
 import AppHeader from '@/components/layout/header';
-import { ChatAssistant } from '@/components/ai/chat-assistant';
+import { Fab } from '@/components/layout/fab';
 
 export const metadata: Metadata = {
-  title: 'Estate AI',
-  description: 'AI-based Asset Management',
+  title: 'Estate AI - The Future of Property Management',
+  description: 'Harness the power of AI to optimize your real estate investments. Smart analytics, predictions, and automation for the modern property owner.',
 };
 
 export default function RootLayout({
@@ -20,7 +20,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <head>
       </head>
-      <body className="font-body antialiased">
+      <body className="font-sans antialiased">
         <SidebarProvider>
           <div className="relative flex min-h-dvh w-full">
             <AppSidebar />
@@ -30,7 +30,7 @@ export default function RootLayout({
             </div>
           </div>
           <Toaster />
-          <ChatAssistant />
+          <Fab />
         </SidebarProvider>
       </body>
     </html>
