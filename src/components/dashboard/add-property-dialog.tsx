@@ -16,7 +16,7 @@ import { Loader2 } from 'lucide-react';
 const propertySchema = z.object({
   buildingName: z.string().min(3, { message: 'Building name must be at least 3 characters' }),
   location: z.string().min(5, { message: 'Location must be at least 5 characters' }),
-  imageURL: z.string().url({ message: 'Please enter a valid image URL' }),
+  imageFile: z.custom<FileList>().optional(),
 });
 
 type PropertyFormValues = z.infer<typeof propertySchema>;
@@ -40,9 +40,31 @@ export function AddPropertyDialog({ children }: { children: React.ReactNode }) {
 
     setIsLoading(true);
     try {
+      let imageURL = '';
+      if (data.imageFile && data.imageFile.length > 0) {
+        const file = data.imageFile[0];
+        if (file.size > 500 * 1024) { // 500KB limit
+          toast({
+            variant: 'destructive',
+            title: 'Image too large',
+            description: 'Please upload an image smaller than 500KB.',
+          });
+          setIsLoading(false);
+          return;
+        }
+        imageURL = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.onerror = (e) => reject(e);
+          reader.readAsDataURL(file);
+        });
+      }
+
       const propertiesCollection = collection(firestore, 'users', user.uid, 'properties');
       await addDocumentNonBlocking(propertiesCollection, {
-        ...data,
+        buildingName: data.buildingName,
+        location: data.location,
+        imageURL: imageURL,
         userId: user.uid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -84,9 +106,15 @@ export function AddPropertyDialog({ children }: { children: React.ReactNode }) {
             {errors.location && <p className="text-sm text-destructive">{errors.location.message}</p>}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="imageURL">Image URL</Label>
-            <Input id="imageURL" {...register('imageURL')} placeholder="https://example.com/image.jpg" className="bg-white/5" />
-            {errors.imageURL && <p className="text-sm text-destructive">{errors.imageURL.message}</p>}
+            <Label htmlFor="imageFile">Property Image (Optional)</Label>
+            <Input 
+              id="imageFile" 
+              type="file" 
+              {...register('imageFile')} 
+              className="bg-white/5 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+              accept="image/png, image/jpeg, image/webp" 
+            />
+            <p className="text-xs text-muted-foreground">Max file size: 500KB. This is a temporary solution due to database limits.</p>
           </div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
