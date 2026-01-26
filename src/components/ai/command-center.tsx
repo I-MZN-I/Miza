@@ -2,42 +2,66 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bot, FileText, Lightbulb, TrendingUp, TrendingDown } from 'lucide-react';
+import { Bot, FileText, Lightbulb, Send, TrendingUp, TrendingDown, Sparkles } from 'lucide-react';
+import { Input } from '../ui/input';
 
 const actions = [
-    { label: 'Optimize Costs', icon: TrendingDown, description: 'Analyze expenses and find savings.' },
-    { label: 'Predict Returns', icon: TrendingUp, description: 'Forecast future investment performance.' },
-    { label: 'Suggest Investments', icon: Lightbulb, description: 'Discover new property opportunities.' },
-    { label: 'Generate Report', icon: FileText, description: 'Create a comprehensive financial summary.' },
+    { label: 'Optimize Costs', icon: TrendingDown },
+    { label: 'Predict ROI', icon: TrendingUp },
+    { label: 'Suggest Investment', icon: Lightbulb },
+    { label: 'Generate Report', icon: FileText },
 ];
 
-function ActionButton({ icon: Icon, label, description }: { icon: React.ElementType, label: string, description: string }) {
+function ActionButton({ icon: Icon, label }: { icon: React.ElementType, label: string }) {
     return (
-        <Button variant="outline" className="h-auto w-full justify-start p-3 text-left">
-            <Icon className="mr-4 h-6 w-6 text-primary" />
-            <div>
-                <p className="font-semibold">{label}</p>
-                <p className="text-xs text-muted-foreground">{description}</p>
-            </div>
+        <Button variant="outline" className="h-auto justify-start p-3 text-left bg-white/5 border-white/10 hover:bg-white/10">
+            <Icon className="mr-3 h-5 w-5 text-primary" />
+            <p className="font-semibold">{label}</p>
         </Button>
     )
 }
 
 export function AICommandCenter() {
   return (
-    <Card className="glassmorphism">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="font-headline text-xl">AI Command Center</CardTitle>
-        <Bot className="h-6 w-6 text-primary" />
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <p className="text-sm text-muted-foreground">
-            Let AI assist you with one-tap actions.
-        </p>
-        {actions.map(action => (
-            <ActionButton key={action.label} icon={action.icon} label={action.label} description={action.description}/>
-        ))}
-      </CardContent>
-    </Card>
+    <div className="flex flex-col gap-8">
+        <Card className="glassmorphism overflow-hidden">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 font-headline text-xl">
+                    <Sparkles className="h-6 w-6 text-accent animate-pulse" />
+                    AI Chat
+                </CardTitle>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                        <Bot className="h-6 w-6 shrink-0 text-primary" />
+                        <div className="glassmorphism rounded-xl rounded-bl-none p-3">
+                            <p>Hello! How can I help you optimize your properties today?</p>
+                        </div>
+                    </div>
+                     <div className="flex items-start gap-3 justify-end">
+                        <div className="glassmorphism rounded-xl rounded-br-none p-3 bg-primary/20">
+                            <p>What's my total income this month?</p>
+                        </div>
+                    </div>
+                </div>
+            </CardContent>
+            <div className="relative mt-4 p-4 pt-0">
+                <Input placeholder="Ask AI anything..." className="pr-12 bg-white/5 border-white/10" />
+                <Button size="icon" className="absolute right-6 top-1/2 -translate-y-1/2 h-8 w-8">
+                    <Send className="h-4 w-4" />
+                </Button>
+            </div>
+        </Card>
+
+        <div className="space-y-3">
+             <h3 className="font-headline text-xl font-semibold">Quick Actions</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {actions.map(action => (
+                    <ActionButton key={action.label} icon={action.icon} label={action.label}/>
+                ))}
+            </div>
+        </div>
+    </div>
   );
 }

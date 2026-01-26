@@ -11,58 +11,56 @@ type PropertyCardProps = {
   property: Property;
 };
 
-
 export function PropertyCard({ property }: PropertyCardProps) {
   const profit = property.totalIncome - property.expenses;
   const profitability = property.totalIncome > 0 ? (profit / property.totalIncome) * 100 : 0;
   const image = PlaceHolderImages.find((img) => img.id === property.imageId);
+  const formatCurrency = (value: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, notation: 'compact' }).format(value);
 
   return (
-    <Card className="glassmorphism group overflow-hidden relative h-80 rounded-2xl">
+    <Card className="glassmorphism group overflow-hidden relative rounded-3xl p-4 flex flex-col justify-between h-96">
       {image && (
         <Image
           src={image.imageUrl}
           alt={property.name}
           fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          className="object-cover transition-transform duration-500 group-hover:scale-105 -z-10"
           data-ai-hint={image.imageHint}
         />
       )}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent -z-10" />
       
-      <div className="relative flex flex-col justify-end h-full p-6 text-white">
-        <div>
-            <h3 className="font-headline text-xl font-semibold">{property.name}</h3>
-            <p className="flex items-center gap-2 text-sm text-white/80">
-            <MapPin className="h-4 w-4" />
-            {property.location}
-            </p>
-        </div>
-        
-        <div className="mt-4 space-y-4">
-            <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-                <div className="flex items-center gap-2" title="Total Income">
-                    <ArrowUp className="h-4 w-4 text-profit" />
-                    <span className="font-semibold">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, notation: 'compact' }).format(property.totalIncome)}</span>
-                </div>
-                <div className="flex items-center gap-2" title="Expenses">
-                    <ArrowDown className="h-4 w-4 text-destructive" />
-                    <span className="font-semibold">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, notation: 'compact' }).format(property.expenses)}</span>
-                </div>
-                <div className="flex items-center gap-2 font-bold" title="Profit">
-                    <Wallet className="h-4 w-4 text-primary" />
-                    <span className="font-headline">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, notation: 'compact' }).format(profit)}</span>
-                </div>
-            </div>
+      <div className="text-white">
+          <h3 className="font-headline text-xl font-semibold">{property.name}</h3>
+          <p className="flex items-center gap-2 text-sm text-white/80">
+          <MapPin className="h-4 w-4" />
+          {property.location}
+          </p>
+      </div>
+      
+      <div className="space-y-4 text-white">
+          <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+              <div className="flex items-center gap-1.5" title="Total Income">
+                  <ArrowUp className="h-4 w-4 text-profit" />
+                  <span className="font-semibold">{formatCurrency(property.totalIncome)}</span>
+              </div>
+              <div className="flex items-center gap-1.5" title="Expenses">
+                  <ArrowDown className="h-4 w-4 text-destructive" />
+                  <span className="font-semibold">{formatCurrency(property.expenses)}</span>
+              </div>
+              <div className="flex items-center gap-1.5 font-bold" title="Profit">
+                  <Wallet className="h-4 w-4 text-primary" />
+                  <span className="font-headline text-base">{formatCurrency(profit)}</span>
+              </div>
+          </div>
 
-            <div className="space-y-1">
-                <div className="flex justify-between text-xs text-white/80">
-                    <span>Profitability</span>
-                    <span>{profitability.toFixed(0)}%</span>
-                </div>
-                <Progress value={profitability} className="h-1.5 bg-white/20 [&>div]:bg-gradient-to-r [&>div]:from-primary/80 [&>div]:to-accent" />
-            </div>
-        </div>
+          <div className="space-y-1">
+              <div className="flex justify-between text-xs text-white/80">
+                  <span>Profitability</span>
+                  <span>{profitability.toFixed(0)}%</span>
+              </div>
+              <Progress value={profitability} className="h-1.5 bg-white/20 [&>div]:bg-gradient-to-r [&>div]:from-primary/80 [&>div]:to-accent" />
+          </div>
       </div>
     </Card>
   );

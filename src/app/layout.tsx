@@ -1,10 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { SidebarProvider } from '@/components/ui/sidebar';
-import AppSidebar from '@/components/layout/sidebar';
-import AppHeader from '@/components/layout/header';
-import { Fab } from '@/components/layout/fab';
+import { BottomNav } from '@/components/layout/bottom-nav';
 
 export const metadata: Metadata = {
   title: 'Estate AI - The Future of Property Management',
@@ -19,19 +16,16 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body className="font-sans antialiased">
-        <SidebarProvider>
-          <div className="relative flex min-h-dvh w-full">
-            <AppSidebar />
-            <div className="flex flex-1 flex-col">
-              <AppHeader />
-              <main className="flex-1 p-4 md:p-6 lg:p-8">{children}</main>
-            </div>
-          </div>
-          <Toaster />
-          <Fab />
-        </SidebarProvider>
+      <body className="font-sans antialiased bg-gradient-to-br from-[#0B0F1A] to-[#121826]">
+        <div className="relative min-h-dvh w-full">
+            <main className="pb-28">{children}</main>
+            <BottomNav />
+        </div>
+        <Toaster />
       </body>
     </html>
   );
