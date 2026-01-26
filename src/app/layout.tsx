@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { BottomNav } from '@/components/layout/bottom-nav';
+import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'Estate AI - The Future of Property Management',
+  title: 'AssetPro - AI Property Management',
   description: 'Harness the power of AI to optimize your real estate investments. Smart analytics, predictions, and automation for the modern property owner.',
 };
 
@@ -21,11 +21,12 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lexend:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-sans antialiased bg-gradient-to-br from-[#0B0F1A] to-[#121826]">
-        <div className="relative min-h-dvh w-full">
-            <main className="pb-28">{children}</main>
-            <BottomNav />
-        </div>
-        <Toaster />
+        <FirebaseClientProvider>
+          <div className="relative min-h-dvh w-full">
+              {children}
+          </div>
+          <Toaster />
+        </FirebaseClientProvider>
       </body>
     </html>
   );

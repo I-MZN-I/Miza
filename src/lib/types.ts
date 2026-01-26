@@ -1,31 +1,43 @@
-export type Expense = {
-  id: string;
-  name: string;
-  amount: number;
-  category: 'Maintenance' | 'Utility' | 'Tax' | 'Salary' | 'Other';
-  date: string;
+import { Timestamp } from "firebase/firestore";
+
+export type WithId<T> = T & { id: string };
+
+export type Property = {
+  userId: string;
+  buildingName: string;
+  location: string;
+  imageURL: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  // These are populated from sub-collections
+  tenants?: WithId<Tenant>[];
+  expenseDetails?: WithId<Expense>[];
 };
 
 export type Tenant = {
-  id: string;
+  propertyId: string;
   name: string;
+  email: string;
+  phone: string;
   rent: number;
-  leaseEndDate: string;
+  moveInDate: string;
+  moveOutDate?: string;
 };
 
-export type Property = {
-  id: string;
-  name: string;
-  location: string;
-  imageId: string;
-  totalIncome: number;
-  expenses: number;
-  rooms: {
-    count: number;
-    sizes: string[];
-  };
-  tenants: Tenant[];
-  expenseDetails: Expense[];
-  currentRent: number;
-  aiScore: number;
+export type Expense = {
+  propertyId: string;
+  categoryId: string;
+  amount: number;
+  date: string;
+  description: string;
+  receiptURL?: string;
+};
+
+export type Agreement = {
+  tenantId: string;
+  documentURL: string;
+  startDate: string;
+  endDate: string;
+  rentAmount: number;
+  terms: string;
 };

@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const navItems = [
-  { href: '/', label: 'Dashboard', icon: LayoutGrid },
+  { href: '/dashboard', label: 'Dashboard', icon: LayoutGrid },
   { href: '/properties', label: 'Properties', icon: Building2 },
   { href: '/ai-assistant', label: 'AI', icon: Sparkles },
   { href: '/settings', label: 'Profile', icon: User },
