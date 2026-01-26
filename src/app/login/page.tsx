@@ -25,15 +25,20 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="flex min-h-dvh w-full flex-col items-center justify-center p-4">
-      <div className="w-full max-w-sm">
-        <div className="flex flex-col items-center text-center mb-8">
-            <Icons.logo className="h-12 w-12 text-primary mb-4" />
-            <h1 className="font-headline text-3xl font-bold text-white">AssetPro</h1>
-            <p className="text-muted-foreground">Sign in to manage your portfolio.</p>
+    <main className="flex min-h-dvh w-full flex-col items-center justify-center p-4 bg-background">
+       <div className="w-full max-w-sm">
+        <div className="border border-white/10 rounded-xl px-4 py-8 md:px-8">
+            <div className="flex flex-col items-center text-center mb-8">
+                <h1 className="font-headline text-4xl font-bold text-white tracking-tighter mb-4">AssetPro</h1>
+            </div>
+            <AuthForm />
         </div>
-        <AuthForm />
-      </div>
+        <div className="text-center mt-6">
+            <p className="text-sm text-muted-foreground">
+                <a href="#" className="font-semibold text-primary hover:underline">Forgot Password?</a>
+            </p>
+        </div>
+       </div>
     </main>
   );
 }

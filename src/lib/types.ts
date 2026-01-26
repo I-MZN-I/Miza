@@ -9,6 +9,8 @@ export type Property = {
   imageURL: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  status: 'active' | 'deleted';
+  deletedAt?: Timestamp;
   // These are populated from sub-collections
   tenants?: WithId<Tenant>[];
   expenseDetails?: WithId<Expense>[];

@@ -3,7 +3,7 @@
 import { AnalyticsBar } from '@/components/dashboard/analytics-bar';
 import { PropertyList } from '@/components/dashboard/property-list';
 import { useCollection, useUser } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { useFirestore, useMemoFirebase } from '@/firebase/provider';
 import type { Property } from '@/lib/types';
 import { AddPropertyDialog } from '@/components/dashboard/add-property-dialog';
@@ -16,7 +16,10 @@ export default function DashboardPage() {
 
   const propertiesQuery = useMemoFirebase(() => {
     if (!user) return null;
-    return collection(firestore, 'users', user.uid, 'properties');
+    return query(
+      collection(firestore, 'users', user.uid, 'properties'),
+      where('status', '==', 'active')
+    );
   }, [firestore, user]);
 
   const { data: properties, isLoading } = useCollection<Property>(propertiesQuery);

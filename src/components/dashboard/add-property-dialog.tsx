@@ -66,6 +66,7 @@ export function AddPropertyDialog({ children }: { children: React.ReactNode }) {
         location: data.location,
         imageURL: imageURL,
         userId: user.uid,
+        status: 'active',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });

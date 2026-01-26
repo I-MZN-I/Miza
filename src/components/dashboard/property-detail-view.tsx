@@ -7,19 +7,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { DocumentUploader } from '@/components/ai/document-uploader';
 import { ScrollArea } from '../ui/scroll-area';
-import { useCollection, useUser, useFirestore, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { useCollection, useUser, useFirestore, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { useState } from 'react';
 import { Button } from '../ui/button';
 import { AddEditTenantDialog } from './add-edit-tenant-dialog';
 import { AddEditExpenseDialog } from './add-edit-expense-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 
-export function PropertyDetailView({ property }: { property: WithId<Property> | null }) {
+export function PropertyDetailView({ property, onCloseDialog }: { property: WithId<Property> | null, onCloseDialog: () => void }) {
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
 
-  // State for dialogs
   const [isTenantDialogOpen, setIsTenantDialogOpen] = useState(false);
   const [editingTenant, setEditingTenant] = useState<WithId<Tenant> | null>(null);
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
@@ -39,6 +40,17 @@ export function PropertyDetailView({ property }: { property: WithId<Property> | 
   
   if (!property) {
     return null;
+  }
+  
+  const handleSoftDeleteProperty = () => {
+    if (!user || !property) return;
+    const propertyDoc = doc(firestore, 'users', user.uid, 'properties', property.id);
+    updateDocumentNonBlocking(propertyDoc, {
+        status: 'deleted',
+        deletedAt: serverTimestamp(),
+    });
+    toast({ title: 'Property Moved to Bin', description: `${property.buildingName} will be permanently deleted in 10 days.` });
+    onCloseDialog();
   }
 
   const handleAddTenant = () => {
@@ -227,6 +239,34 @@ export function PropertyDetailView({ property }: { property: WithId<Property> | 
                       feature="expense"
                   />
               </CardContent>
+          </Card>
+
+          <Card className="bg-transparent border-destructive/50 border shadow-none">
+             <CardHeader>
+                 <CardTitle className="text-destructive">Danger Zone</CardTitle>
+                 <CardDescription>
+                    Deleting a property will move it to the "Recently Deleted" bin in your profile, where it will be permanently removed after 10 days.
+                 </CardDescription>
+             </CardHeader>
+             <CardContent>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive">Delete this property</Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will move the property '{property.buildingName}' to the bin. You can restore it for 10 days.
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleSoftDeleteProperty}>Yes, delete property</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+             </CardContent>
           </Card>
         </div>
       </ScrollArea>

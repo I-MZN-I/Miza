@@ -11,6 +11,10 @@ import { Skeleton } from '../ui/skeleton';
 export function PropertyList({ properties, isLoading }: { properties: WithId<Property>[] | null, isLoading: boolean }) {
   const [selectedProperty, setSelectedProperty] = useState<WithId<Property> | null>(null);
 
+  const handleCloseDialog = () => {
+    setSelectedProperty(null);
+  };
+
   if (isLoading) {
     return (
         <div className="flex flex-col gap-6">
@@ -69,7 +73,7 @@ export function PropertyList({ properties, isLoading }: { properties: WithId<Pro
                     </div>
                 </div>
               </DialogHeader>
-              <PropertyDetailView property={selectedProperty} />
+              <PropertyDetailView property={selectedProperty} onCloseDialog={handleCloseDialog} />
             </>
            )}
         </DialogContent>
