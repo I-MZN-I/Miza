@@ -28,18 +28,18 @@ export function BottomNav() {
               key={item.label}
               className={cn(
                 "relative flex h-full flex-1 flex-col items-center justify-center rounded-full text-xs transition-colors z-10",
-                isActive ? "text-primary font-bold" : "text-muted-foreground hover:text-foreground"
+                isActive ? "text-primary" : "text-muted-foreground hover:text-foreground"
               )}
             >
                 <motion.div 
                     className="relative"
-                    animate={isActive ? { scale: [1, 1.1, 1] } : {}}
-                    transition={isActive ? { duration: 2, repeat: Infinity, repeatType: 'reverse' } : {}}
+                    animate={{ scale: isActive ? 1.1 : 1 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 20 }}
                 >
-                    <item.icon className={cn("h-5 w-5 transition-transform", isActive && "scale-110")} />
+                    <item.icon className="h-5 w-5" />
                     {isActive && 
                         <motion.div 
-                            className="absolute -inset-2 bg-primary/30 rounded-full blur-lg"
+                            className="absolute -inset-2 bg-primary/30 rounded-full blur-md"
                             layoutId="nav-glow"
                             initial={false}
                             animate={{opacity: 1}}
@@ -48,7 +48,7 @@ export function BottomNav() {
                         />
                     }
                 </motion.div>
-                <span>{item.label}</span>
+                <span className={cn("relative", isActive && "font-semibold")}>{item.label}</span>
             </Link>
           );
         })}

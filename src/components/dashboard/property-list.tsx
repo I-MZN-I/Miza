@@ -14,7 +14,7 @@ export function PropertyList() {
     <>
       <div className="flex flex-col gap-6">
         <h2 className="font-headline text-2xl font-semibold">Your Properties</h2>
-        <div className="grid grid-cols-1 gap-6">
+        <div className="grid grid-cols-1 gap-4">
           {properties.map((property) => (
             <PropertyCard 
               key={property.id} 

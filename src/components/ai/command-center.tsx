@@ -14,9 +14,9 @@ const actions = [
 
 function ActionButton({ icon: Icon, label }: { icon: React.ElementType, label: string }) {
     return (
-        <Button variant="outline" className="h-auto justify-start p-3 text-left bg-white/5 border-white/10 hover:bg-white/10 transition-transform hover:scale-105">
-            <Icon className="mr-3 h-5 w-5 text-primary" />
-            <p className="font-semibold">{label}</p>
+        <Button variant="ghost" className="h-auto justify-start p-4 text-left bg-transparent border border-white/10 hover:bg-primary/10 hover:text-primary transition-colors rounded-lg group">
+            <Icon className="mr-4 h-6 w-6 text-primary/80 transition-colors group-hover:text-primary" />
+            <p className="font-semibold text-base">{label}</p>
         </Button>
     )
 }
@@ -27,7 +27,7 @@ export function AICommandCenter() {
         <Card className="glassmorphism overflow-hidden">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 font-headline text-xl">
-                    <Sparkles className="h-6 w-6 text-accent animate-pulse" />
+                    <Sparkles className="h-6 w-6 text-primary" />
                     AI Chat
                 </CardTitle>
             </CardHeader>
@@ -40,7 +40,7 @@ export function AICommandCenter() {
                         </div>
                     </div>
                      <div className="flex items-start gap-3 justify-end">
-                        <div className="glassmorphism rounded-xl rounded-br-none p-3 bg-primary/20">
+                        <div className="glassmorphism rounded-xl rounded-br-none p-3 bg-primary/20 text-primary-foreground">
                             <p>What's my total income this month?</p>
                         </div>
                     </div>

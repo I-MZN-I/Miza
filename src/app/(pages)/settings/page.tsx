@@ -15,7 +15,7 @@ export default function ProfilePage() {
 
       <Card className="glassmorphism">
         <CardHeader className="flex flex-row items-center gap-4">
-          <Avatar className="h-16 w-16">
+          <Avatar className="h-16 w-16 border-2 border-primary/50">
             <AvatarImage src="https://picsum.photos/seed/avatar/100/100" />
             <AvatarFallback>PO</AvatarFallback>
           </Avatar>

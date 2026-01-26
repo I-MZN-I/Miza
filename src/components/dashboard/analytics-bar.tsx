@@ -19,7 +19,7 @@ function StatPill({
   const Icon = icon;
   return (
     <div className="glassmorphism flex items-center p-3 rounded-full shrink-0">
-      <div className="bg-white/10 rounded-full p-2 mr-3">
+      <div className="bg-primary/10 rounded-full p-2 mr-3">
         <Icon className="h-5 w-5 text-primary" />
       </div>
       <div>

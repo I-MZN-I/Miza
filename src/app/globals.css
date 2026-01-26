@@ -13,8 +13,8 @@
     --popover: 222 44% 8%;
     --popover-foreground: 210 29% 97%;
     
-    --primary: 246 100% 71%; /* #7C6BFF */
-    --primary-foreground: 210 29% 97%;
+    --primary: 40 96% 54%; /* #F7B53B - Rich Gold */
+    --primary-foreground: 222 44% 8%; /* Dark text on gold */
     
     --secondary: 220 33% 15%;
     --secondary-foreground: 210 29% 97%;
@@ -22,7 +22,7 @@
     --muted: 220 33% 15%;
     --muted-foreground: 215 9% 65%; /* #9CA3AF */
     
-    --accent: 180 100% 50%; /* #00F0FF */
+    --accent: 170 80% 45%; /* #19D4A1 - Teal */
     --accent-foreground: 222 44% 8%;
     
     --destructive: 0 84% 60%; /* #EF4444 */
@@ -30,15 +30,15 @@
     
     --border: 210 40% 98% / 0.1;
     --input: 210 40% 98% / 0.1;
-    --ring: 246 100% 71%;
+    --ring: 40 96% 54%;
 
-    --radius: 1rem;
+    --radius: 0.75rem;
 
     --profit: 142 67% 45%; /* #22C55E */
     --neutral: 45 93% 53%; /* #FACC15 */
 
-    --chart-1: 246 100% 71%;
-    --chart-2: 180 100% 50%;
+    --chart-1: 40 96% 54%;
+    --chart-2: 170 80% 45%;
   }
 
   .dark {
@@ -51,8 +51,8 @@
     --popover: 222 44% 8%;
     --popover-foreground: 210 29% 97%;
     
-    --primary: 246 100% 71%; /* #7C6BFF */
-    --primary-foreground: 210 29% 97%;
+    --primary: 40 96% 54%; /* #F7B53B */
+    --primary-foreground: 222 44% 8%;
     
     --secondary: 220 33% 15%;
     --secondary-foreground: 210 29% 97%;
@@ -60,7 +60,7 @@
     --muted: 220 33% 15%;
     --muted-foreground: 215 9% 65%; /* #9CA3AF */
     
-    --accent: 180 100% 50%; /* #00F0FF */
+    --accent: 170 80% 45%; /* #19D4A1 */
     --accent-foreground: 222 44% 8%;
     
     --destructive: 0 84% 60%; /* #EF4444 */
@@ -68,15 +68,15 @@
     
     --border: 210 40% 98% / 0.1;
     --input: 210 40% 98% / 0.1;
-    --ring: 246 100% 71%;
+    --ring: 40 96% 54%;
 
-    --radius: 1rem;
+    --radius: 0.75rem;
 
     --profit: 142 67% 45%; /* #22C55E */
     --neutral: 45 93% 53%; /* #FACC15 */
 
-    --chart-1: 246 100% 71%;
-    --chart-2: 180 100% 50%;
+    --chart-1: 40 96% 54%;
+    --chart-2: 170 80% 45%;
   }
 }
 
@@ -91,6 +91,6 @@
 
 @layer components {
   .glassmorphism {
-    @apply bg-white/[.06] backdrop-blur-[18px] border border-white/[.12] shadow-2xl shadow-black/30;
+    @apply bg-white/[.04] backdrop-blur-[24px] border border-white/[.08] shadow-lg shadow-black/20;
   }
 }

@@ -49,9 +49,14 @@ export function PropertyDetailView({ property }: { property: Property | null }) 
             </header>
 
             <div className="grid gap-6">
-                <Card className="bg-white/5 border border-white/10 rounded-2xl">
+                <Card className="bg-transparent border-none shadow-none">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 font-headline"><Building className="text-primary"/> Room Details</CardTitle>
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10 text-primary">
+                            <Building className="h-6 w-6"/>
+                        </div>
+                        <CardTitle className="font-headline text-lg">Room Details</CardTitle>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-2 gap-4 text-sm">
@@ -66,10 +71,17 @@ export function PropertyDetailView({ property }: { property: Property | null }) 
                 </CardContent>
                 </Card>
                 
-                <Card className="bg-white/5 border border-white/10 rounded-2xl">
+                <Card className="bg-transparent border-none shadow-none">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 font-headline"><User className="text-primary"/> Tenants</CardTitle>
-                    <CardDescription>Rent from each tenant and lease information.</CardDescription>
+                     <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10 text-primary">
+                            <User className="h-6 w-6"/>
+                        </div>
+                        <div>
+                            <CardTitle className="font-headline text-lg">Tenants</CardTitle>
+                            <CardDescription>Rent from each tenant and lease information.</CardDescription>
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent className="p-0">
                     <Table>
@@ -82,7 +94,7 @@ export function PropertyDetailView({ property }: { property: Property | null }) 
                     </TableHeader>
                     <TableBody>
                         {property.tenants.map(tenant => (
-                        <TableRow key={tenant.id} className="border-white/10 hover:bg-primary/10">
+                        <TableRow key={tenant.id} className="border-white/10 hover:bg-primary/5">
                             <TableCell className="font-medium">{tenant.name}</TableCell>
                             <TableCell className="text-right">{formatCurrency(tenant.rent)}</TableCell>
                             <TableCell className="text-right">{new Date(tenant.leaseEndDate).toLocaleDateString()}</TableCell>
@@ -93,10 +105,17 @@ export function PropertyDetailView({ property }: { property: Property | null }) 
                 </CardContent>
                 </Card>
 
-                <Card className="bg-white/5 border border-white/10 rounded-2xl">
+                <Card className="bg-transparent border-none shadow-none">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 font-headline"><DollarSign className="text-primary"/> Expenses</CardTitle>
-                    <CardDescription>Breakdown of all expenses for this property.</CardDescription>
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10 text-primary">
+                            <DollarSign className="h-6 w-6"/>
+                        </div>
+                        <div>
+                            <CardTitle className="font-headline text-lg">Expenses</CardTitle>
+                            <CardDescription>Breakdown of all expenses for this property.</CardDescription>
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent className="p-0">
                     <Table>
@@ -110,14 +129,14 @@ export function PropertyDetailView({ property }: { property: Property | null }) 
                     </TableHeader>
                     <TableBody>
                         {property.expenseDetails.map(expense => (
-                        <TableRow key={expense.id} className="border-white/10 hover:bg-primary/10">
+                        <TableRow key={expense.id} className="border-white/10 hover:bg-primary/5">
                             <TableCell className="font-medium">{expense.name}</TableCell>
                             <TableCell>
                                 <Badge variant={
-                                    expense.category === 'Utility' ? 'default' : 
                                     expense.category === 'Maintenance' ? 'secondary' : 'outline'
                                 } className={
-                                    expense.category === 'Utility' ? 'bg-accent text-accent-foreground' : ''
+                                    expense.category === 'Utility' ? 'bg-accent text-accent-foreground' : 
+                                    expense.category === 'Tax' ? 'bg-neutral text-neutral-foreground' : ''
                                 }>{expense.category}</Badge>
                             </TableCell>
                             <TableCell className="text-right">{formatCurrency(expense.amount)}</TableCell>
@@ -129,10 +148,17 @@ export function PropertyDetailView({ property }: { property: Property | null }) 
                 </CardContent>
                 </Card>
                 
-                <Card className="bg-white/5 border border-white/10 rounded-2xl">
+                <Card className="bg-transparent border-none shadow-none">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 font-headline"><FileText className="text-primary"/> Documents</CardTitle>
-                        <CardDescription>Upload and manage lease agreements, receipts, and other documents.</CardDescription>
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10 text-primary">
+                                <FileText className="h-6 w-6"/>
+                            </div>
+                            <div>
+                                <CardTitle className="font-headline text-lg">Documents</CardTitle>
+                                <CardDescription>Upload and manage lease agreements, receipts, and other documents.</CardDescription>
+                            </div>
+                        </div>
                     </CardHeader>
                     <CardContent className="grid gap-4">
                         <DocumentUploader
