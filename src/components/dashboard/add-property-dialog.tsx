@@ -112,7 +112,7 @@ export function AddPropertyDialog({ children }: { children: React.ReactNode }) {
               id="imageFile" 
               type="file" 
               {...register('imageFile')} 
-              className="bg-white/5 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+              className="bg-white/5 items-center text-muted-foreground py-0 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
               accept="image/png, image/jpeg, image/webp" 
             />
             <p className="text-xs text-muted-foreground">Max file size: 500KB. This is a temporary solution due to database limits.</p>
