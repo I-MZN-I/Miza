@@ -11,22 +11,30 @@ type RentPredictionProps = {
 export function RentPrediction({ currentRent }: RentPredictionProps) {
   const [predictedRent, setPredictedRent] = useState<number | null>(null);
   const [percentageIncrease, setPercentageIncrease] = useState<number | null>(null);
+  const [formattedCurrentRent, setFormattedCurrentRent] = useState<string | null>(null);
+  const [formattedPredictedRent, setFormattedPredictedRent] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate AI prediction fetch
+    // Both Math.random and Intl.NumberFormat can cause hydration errors.
+    // Keep them inside useEffect.
+    const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(value);
+
+    setFormattedCurrentRent(formatCurrency(currentRent));
+
     const timer = setTimeout(() => {
         const factor = 1 + (Math.random() * (0.15 - 0.05) + 0.05); // Random increase between 5% and 15%
         const newRent = Math.round((currentRent * factor) / 100) * 100;
         const increase = ((newRent - currentRent) / currentRent) * 100;
         setPredictedRent(newRent);
         setPercentageIncrease(increase);
+        if (newRent) {
+          setFormattedPredictedRent(formatCurrency(newRent));
+        }
     }, 1500);
 
     return () => clearTimeout(timer);
   }, [currentRent]);
 
-
-  const formatCurrency = (value: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(value);
 
   return (
     <Card>
@@ -40,14 +48,18 @@ export function RentPrediction({ currentRent }: RentPredictionProps) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="text-sm text-muted-foreground">Current Rent</p>
-            <p className="font-headline text-2xl font-bold">{formatCurrency(currentRent)}</p>
+            {formattedCurrentRent ? (
+              <p className="font-headline text-2xl font-bold">{formattedCurrentRent}</p>
+            ) : (
+              <Skeleton className="h-8 w-24 mt-1" />
+            )}
           </div>
           <div>
             <p className="text-sm text-muted-foreground">AI Recommended</p>
-            {predictedRent === null ? (
+            {formattedPredictedRent === null ? (
                  <Skeleton className="h-8 w-32 mt-1" />
             ) : (
-                <p className="font-headline text-2xl font-bold text-primary">{formatCurrency(predictedRent)}</p>
+                <p className="font-headline text-2xl font-bold text-primary">{formattedPredictedRent}</p>
             )}
           </div>
         </div>

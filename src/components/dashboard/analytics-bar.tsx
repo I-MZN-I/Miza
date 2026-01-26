@@ -2,17 +2,19 @@
 
 import { properties } from "@/lib/data";
 import { DollarSign, Building, TrendingUp, TrendingDown, Rocket } from "lucide-react";
-import React from "react";
-import { cn } from "@/lib/utils";
+import React, { useState, useEffect } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function StatPill({
   label,
   value,
   icon,
+  isLoading
 }: {
   label: string;
   value: string;
   icon: React.ElementType;
+  isLoading?: boolean;
 }) {
   const Icon = icon;
   return (
@@ -22,7 +24,11 @@ function StatPill({
       </div>
       <div>
         <p className="text-xs text-muted-foreground">{label}</p>
-        <p className="font-headline text-lg font-semibold">{value}</p>
+        {isLoading ? (
+            <Skeleton className="h-6 w-16 mt-1" />
+        ) : (
+            <p className="font-headline text-lg font-semibold">{value}</p>
+        )}
       </div>
     </div>
   );
@@ -30,13 +36,27 @@ function StatPill({
 
 
 export function AnalyticsBar() {
+    const [formattedIncome, setFormattedIncome] = useState<string | null>(null);
+    const [formattedExpenses, setFormattedExpenses] = useState<string | null>(null);
+    const [formattedNetProfit, setFormattedNetProfit] = useState<string | null>(null);
+    
+    // These are safe to calculate directly
     const totalProperties = properties.length;
-    const totalIncome = properties.reduce((sum, p) => sum + p.totalIncome, 0);
-    const totalExpenses = properties.reduce((sum, p) => sum + p.expenses, 0);
-    const netProfit = totalIncome - totalExpenses;
-    const avgAiScore = properties.reduce((sum, p) => sum + p.aiScore, 0) / totalProperties;
+    const avgAiScore = properties.reduce((sum, p) => sum + p.aiScore, 0) / properties.length;
 
-    const formatCurrency = (value: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, notation: 'compact' }).format(value);
+
+    useEffect(() => {
+        // These calculations are deferred to the client
+        const totalIncome = properties.reduce((sum, p) => sum + p.totalIncome, 0);
+        const totalExpenses = properties.reduce((sum, p) => sum + p.expenses, 0);
+        const netProfit = totalIncome - totalExpenses;
+        
+        const formatCurrency = (value: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0, notation: 'compact' }).format(value);
+
+        setFormattedIncome(formatCurrency(totalIncome));
+        setFormattedExpenses(formatCurrency(totalExpenses));
+        setFormattedNetProfit(formatCurrency(netProfit));
+    }, []);
 
   return (
     <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4">
@@ -47,18 +67,21 @@ export function AnalyticsBar() {
         />
         <StatPill 
             label="Income"
-            value={formatCurrency(totalIncome)}
+            value={formattedIncome ?? ''}
             icon={TrendingUp}
+            isLoading={!formattedIncome}
         />
         <StatPill
             label="Expenses"
-            value={formatCurrency(totalExpenses)}
+            value={formattedExpenses ?? ''}
             icon={TrendingDown}
+            isLoading={!formattedExpenses}
         />
         <StatPill 
             label="Net Profit"
-            value={formatCurrency(netProfit)}
+            value={formattedNetProfit ?? ''}
             icon={DollarSign}
+            isLoading={!formattedNetProfit}
         />
         <StatPill 
             label="AI Score"
