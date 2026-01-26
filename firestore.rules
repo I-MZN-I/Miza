@@ -1,0 +1,221 @@
+/**
+ * Core Philosophy: This ruleset enforces a strict user-ownership model for the AssetPro application.
+ * All user-generated data (properties, tenants, reports, etc.) is private and can only be
+ * accessed by the user who created it. This provides a strong security foundation by default.
+ *
+ * Data Structure: The data is organized hierarchically to reflect ownership. All private data is
+ * stored in subcollections under the `/users/{userId}` path. This structure is key to creating
+
+ * simple, performant, and secure rules, as ownership can be determined directly from the
+ * document path without needing extra database reads. A single top-level collection,
+ * `expense_categories`, holds public, read-only data available to all users.
+ *
+ * Key Security Decisions:
+ * - Strict Ownership: A user can only read, write, and list documents within their own
+ *   `/users/{userId}` data tree. There is no concept of shared or public user data.
+ * - No User Listing: It is not possible for any user to list all documents in the top-level
+ *   `/users` collection, protecting user privacy.
+ * - Read-Only Global Data: The `/expense_categories` collection is publicly readable by anyone
+ *   but cannot be modified by any client. This data is assumed to be managed administratively.
+ * - User Document Protection: Users can update their own profile but are not permitted to delete
+ *   their main user document, preventing orphaned data in subcollections.
+ *
+ * Denormalization for Authorization: This ruleset relies on a path-based ownership strategy.
+ * The `userId` is part of the path for all user-owned documents, which means authorization
+ * checks are extremely fast and do not require `get()` calls to other documents.
+ * Additionally, rules enforce that relational IDs within a document (e.g., a `userId` field
+ * in a property document) must match the corresponding ID in the path upon creation, ensuring
+ * data integrity.
+ *
+ * Structural Segregation: The design correctly segregates private user data from public data
+ * by placing all user-specific content into subcollections under `/users/{userId}`. This makes
+ * list operations inherently secure, as a query for a user's properties (`/users/{userId}/properties`)
+ * can never accidentally expose properties belonging to another user.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions for concise and readable rules
+    // Checks if the user is signed in
+    // function isSignedIn() {
+    //   return request.auth != null;
+    // }
+
+    // Checks if the requesting user's UID matches the userId from the path.
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    // For update/delete operations, checks ownership AND ensures the document exists.
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    // --- Data Validation Helpers (Prototyping Mode) ---
+    // These functions only validate fields critical for authorization and relational integrity.
+    // They do NOT validate the full data shape, allowing for flexible development.
+
+    // Validates that a new User document contains an 'id' field matching its path.
+    function isValidUserOnCreate(userId) {
+      return request.resource.data.id == userId;
+    }
+    
+    // Enforces that the 'id' field in a User document cannot be changed.
+    function isUserImmutableOnUpdate() {
+      return request.resource.data.id == resource.data.id;
+    }
+
+    // Validates that a new Property document is correctly linked to its owner.
+    function isValidPropertyOnCreate(userId) {
+      return request.resource.data.userId == userId;
+    }
+
+    // Enforces that the 'userId' link on a Property document cannot be changed.
+    function isPropertyImmutableOnUpdate() {
+      return request.resource.data.userId == resource.data.userId;
+    }
+
+    // Validates that a new Tenant document is correctly linked to its parent property.
+    function isValidTenantOnCreate(propertyId) {
+      return request.resource.data.propertyId == propertyId;
+    }
+
+    // Enforces that the 'propertyId' link on a Tenant document cannot be changed.
+    function isTenantImmutableOnUpdate() {
+      return request.resource.data.propertyId == resource.data.propertyId;
+    }
+    
+    // Validates that a new Agreement document is correctly linked to its parent tenant.
+    function isValidAgreementOnCreate(tenantId) {
+      return request.resource.data.tenantId == tenantId;
+    }
+
+    // Enforces that the 'tenantId' link on an Agreement document cannot be changed.
+    function isAgreementImmutableOnUpdate() {
+      return request.resource.data.tenantId == resource.data.tenantId;
+    }
+    
+    // Validates that a new Expense document is correctly linked to its parent property.
+    function isValidExpenseOnCreate(propertyId) {
+      return request.resource.data.propertyId == propertyId;
+    }
+    
+    // Enforces that the 'propertyId' link on an Expense document cannot be changed.
+    function isExpenseImmutableOnUpdate() {
+      return request.resource.data.propertyId == resource.data.propertyId;
+    }
+
+    // Validates that a new Report document is correctly linked to its owner.
+    function isValidReportOnCreate(userId) {
+      return request.resource.data.userId == userId;
+    }
+
+    // Enforces that the 'userId' link on a Report document cannot be changed.
+    function isReportImmutableOnUpdate() {
+      return request.resource.data.userId == resource.data.userId;
+    }
+
+    /**
+     * @description Controls access to user profile documents.
+     * @path /users/{userId}
+     * @allow A signed-in user (auth.uid='user123') can create their own profile document at /users/user123 (create).
+     * @allow The owner ('user123') can read or update their own profile document (get, update).
+     * @deny An anonymous user cannot access any user profile.
+     * @deny A user ('user456') cannot read, update, or delete another user's profile ('user123').
+     * @deny No user can list all documents in the `/users` collection (list).
+     * @principle Enforces self-creation and ownership for a user's root document.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false; // Disallow listing all users for privacy.
+      allow create: if isOwner(userId) && isValidUserOnCreate(userId);
+      allow update: if isExistingOwner(userId) && isUserImmutableOnUpdate();
+      allow delete: if false; // Prevent users from deleting their own account via client request.
+    }
+
+    /**
+     * @description Secures a user's property documents.
+     * @path /users/{userId}/properties/{propertyId}
+     * @allow The owner ('user123') can create, read, update, delete, and list their own properties (get, list, create, update, delete).
+     * @deny A different user ('user456') cannot access properties belonging to 'user123' in any way.
+     * @principle Restricts access to a user's own data tree using path-based ownership.
+     */
+    match /users/{userId}/properties/{propertyId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidPropertyOnCreate(userId);
+      allow update: if isExistingOwner(userId) && isPropertyImmutableOnUpdate();
+      allow delete: if isExistingOwner(userId);
+    }
+    
+    /**
+     * @description Secures a property's tenant documents.
+     * @path /users/{userId}/properties/{propertyId}/tenants/{tenantId}
+     * @allow The owner of the property ('user123') can manage all tenants within that property.
+     * @deny Another user cannot access tenant information.
+     * @principle Enforces inherited ownership from the top-level user document.
+     */
+    match /users/{userId}/properties/{propertyId}/tenants/{tenantId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidTenantOnCreate(propertyId);
+      allow update: if isExistingOwner(userId) && isTenantImmutableOnUpdate();
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures a tenant's lease agreement documents.
+     * @path /users/{userId}/properties/{propertyId}/tenants/{tenantId}/agreements/{agreementId}
+     * @allow The property owner ('user123') can manage all agreements for their tenants.
+     * @deny Another user cannot access lease agreements.
+     * @principle Enforces deeply nested path-based ownership.
+     */
+    match /users/{userId}/properties/{propertyId}/tenants/{tenantId}/agreements/{agreementId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidAgreementOnCreate(tenantId);
+      allow update: if isExistingOwner(userId) && isAgreementImmutableOnUpdate();
+      allow delete: if isExistingOwner(userId);
+    }
+    
+    /**
+     * @description Secures a property's expense documents.
+     * @path /users/{userId}/properties/{propertyId}/expenses/{expenseId}
+     * @allow The property owner ('user123') can manage all expenses for their properties.
+     * @deny Another user cannot access expense records.
+     * @principle Enforces inherited ownership from the top-level user document.
+     */
+    match /users/{userId}/properties/{propertyId}/expenses/{expenseId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidExpenseOnCreate(propertyId);
+      allow update: if isExistingOwner(userId) && isExpenseImmutableOnUpdate();
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Secures a user's generated report documents.
+     * @path /users/{userId}/reports/{reportId}
+     * @allow The owner ('user123') can manage their own generated reports.
+     * @deny Another user cannot access someone else's reports.
+     * @principle Restricts access to a user's own data tree using path-based ownership.
+     */
+    match /users/{userId}/reports/{reportId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidReportOnCreate(userId);
+      allow update: if isExistingOwner(userId) && isReportImmutableOnUpdate();
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Manages access to globally available expense categories.
+     * @path /expense_categories/{expenseCategoryId}
+     * @allow Any user, signed-in or anonymous, can read the list of expense categories (get, list).
+     * @deny No user can create, update, or delete expense categories from the client.
+     * @principle Provides public read-only access for global configuration data.
+     */
+    match /expense_categories/{expenseCategoryId} {
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
+  }
+}

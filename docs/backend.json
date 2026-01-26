@@ -1,0 +1,474 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user of the AssetPro application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "username": {
+          "type": "string",
+          "description": "User's username for login."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "User's first name."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "User's last name."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp of when the user account was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp of when the user account was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "username",
+        "email",
+        "firstName",
+        "lastName",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Property": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Property",
+      "type": "object",
+      "description": "Represents a property managed within the AssetPro application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the property."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who owns this property. (Relationship: User 1:N Property)"
+        },
+        "buildingName": {
+          "type": "string",
+          "description": "Name of the building."
+        },
+        "location": {
+          "type": "string",
+          "description": "Location of the property."
+        },
+        "imageURL": {
+          "type": "string",
+          "description": "URL of the property image.",
+          "format": "uri"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp of when the property was added.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp of when the property was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "buildingName",
+        "location",
+        "imageURL",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Tenant": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Tenant",
+      "type": "object",
+      "description": "Represents a tenant renting a property.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the tenant."
+        },
+        "propertyId": {
+          "type": "string",
+          "description": "Reference to the Property being rented. (Relationship: Property 1:N Tenant)"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the tenant."
+        },
+        "email": {
+          "type": "string",
+          "description": "Tenant's email address.",
+          "format": "email"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Tenant's phone number."
+        },
+        "rent": {
+          "type": "number",
+          "description": "Rent amount per month."
+        },
+        "moveInDate": {
+          "type": "string",
+          "description": "Date when the tenant moved in.",
+          "format": "date-time"
+        },
+        "moveOutDate": {
+          "type": "string",
+          "description": "Date when the tenant moved out (if applicable).",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "propertyId",
+        "name",
+        "email",
+        "phone",
+        "rent",
+        "moveInDate"
+      ]
+    },
+    "Agreement": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Agreement",
+      "type": "object",
+      "description": "Represents a lease agreement between a property owner and a tenant.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the agreement."
+        },
+        "tenantId": {
+          "type": "string",
+          "description": "Reference to the Tenant associated with this agreement. (Relationship: Tenant 1:N Agreement)"
+        },
+        "documentURL": {
+          "type": "string",
+          "description": "URL of the lease agreement document.",
+          "format": "uri"
+        },
+        "startDate": {
+          "type": "string",
+          "description": "Start date of the lease agreement.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "End date of the lease agreement.",
+          "format": "date-time"
+        },
+        "rentAmount": {
+          "type": "number",
+          "description": "The rent amount specified in the agreement."
+        },
+        "terms": {
+          "type": "string",
+          "description": "Terms and conditions of the lease agreement."
+        }
+      },
+      "required": [
+        "id",
+        "tenantId",
+        "documentURL",
+        "startDate",
+        "endDate",
+        "rentAmount",
+        "terms"
+      ]
+    },
+    "Expense": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Expense",
+      "type": "object",
+      "description": "Represents an expense associated with a property.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the expense."
+        },
+        "propertyId": {
+          "type": "string",
+          "description": "Reference to the Property associated with this expense. (Relationship: Property 1:N Expense)"
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Reference to the ExpenseCategory for this expense. (Relationship: ExpenseCategory 1:N Expense)"
+        },
+        "amount": {
+          "type": "number",
+          "description": "Amount of the expense."
+        },
+        "date": {
+          "type": "string",
+          "description": "Date the expense was incurred.",
+          "format": "date-time"
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the expense."
+        },
+        "receiptURL": {
+          "type": "string",
+          "description": "URL of the expense receipt.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "propertyId",
+        "categoryId",
+        "amount",
+        "date",
+        "description"
+      ]
+    },
+    "ExpenseCategory": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ExpenseCategory",
+      "type": "object",
+      "description": "Represents a category for expenses (e.g., maintenance, utility, tax).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the expense category."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the expense category."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the expense category."
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "Report": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Report",
+      "type": "object",
+      "description": "Represents a generated report for a property or set of properties.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the report."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the User who generated the report. (Relationship: User 1:N Report)"
+        },
+        "propertyIds": {
+          "type": "array",
+          "description": "References to the Properties included in the report. (Relationship: Property N:N Report)",
+          "items": {
+            "type": "string"
+          }
+        },
+        "generationDate": {
+          "type": "string",
+          "description": "Date when the report was generated.",
+          "format": "date-time"
+        },
+        "reportDataURL": {
+          "type": "string",
+          "description": "URL to access the generated report data (e.g., PDF or JSON).",
+          "format": "uri"
+        },
+        "aiInsights": {
+          "type": "string",
+          "description": "The AI insights included in the report."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "propertyIds",
+        "generationDate",
+        "reportDataURL",
+        "aiInsights"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profile information. Each user document is uniquely identified by their userId.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/properties/{propertyId}",
+        "definition": {
+          "entityName": "Property",
+          "schema": {
+            "$ref": "#/backend/entities/Property"
+          },
+          "description": "Stores property details for each user.  Path-based ownership is enforced. Includes the userId to identify the property owner.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "propertyId",
+              "description": "The unique identifier for the property."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/properties/{propertyId}/tenants/{tenantId}",
+        "definition": {
+          "entityName": "Tenant",
+          "schema": {
+            "$ref": "#/backend/entities/Tenant"
+          },
+          "description": "Stores tenant information for each property. Path-based ownership is enforced. Includes the propertyId and userId to identify the property and user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "propertyId",
+              "description": "The unique identifier for the property."
+            },
+            {
+              "name": "tenantId",
+              "description": "The unique identifier for the tenant."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/properties/{propertyId}/tenants/{tenantId}/agreements/{agreementId}",
+        "definition": {
+          "entityName": "Agreement",
+          "schema": {
+            "$ref": "#/backend/entities/Agreement"
+          },
+          "description": "Stores lease agreement details for each tenant.  Path-based ownership is enforced. Includes the tenantId, propertyId, and userId to identify the tenant, property, and user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "propertyId",
+              "description": "The unique identifier for the property."
+            },
+            {
+              "name": "tenantId",
+              "description": "The unique identifier for the tenant."
+            },
+            {
+              "name": "agreementId",
+              "description": "The unique identifier for the agreement."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/properties/{propertyId}/expenses/{expenseId}",
+        "definition": {
+          "entityName": "Expense",
+          "schema": {
+            "$ref": "#/backend/entities/Expense"
+          },
+          "description": "Stores expense records for each property. Path-based ownership is enforced. Includes the propertyId and userId to identify the property and user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "propertyId",
+              "description": "The unique identifier for the property."
+            },
+            {
+              "name": "expenseId",
+              "description": "The unique identifier for the expense."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/expense_categories/{expenseCategoryId}",
+        "definition": {
+          "entityName": "ExpenseCategory",
+          "schema": {
+            "$ref": "#/backend/entities/ExpenseCategory"
+          },
+          "description": "Stores expense categories.  Globally accessible.",
+          "params": [
+            {
+              "name": "expenseCategoryId",
+              "description": "The unique identifier for the expense category."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/reports/{reportId}",
+        "definition": {
+          "entityName": "Report",
+          "schema": {
+            "$ref": "#/backend/entities/Report"
+          },
+          "description": "Stores reports generated by the user.  Path-based ownership is enforced. Includes the userId to identify the user.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "reportId",
+              "description": "The unique identifier for the report."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to manage properties, tenants, agreements, expenses, and reports for the AssetPro application. The structure prioritizes authorization independence and supports secure list operations through path-based ownership and structural segregation. User-owned data is stored under `/users/{userId}` to simplify security rules and ensure data privacy. Specifically, properties, tenants, agreements, and reports are stored as subcollections under each user's document. This design ensures that only the user can access their own data.\n\n**Authorization Independence:** The design achieves authorization independence by ensuring that access control is based solely on the `request.auth.uid` and the path. There are no `get()` calls required to determine ownership. Each user's data is isolated under their respective user ID, making security rules straightforward. For instance, only the authenticated user matching the `userId` can access data under `/users/{userId}`.\n\n**QAPs (Rules are not Filters):** The structure supports secure `list` operations by leveraging path-based ownership. Listing properties under `/users/{userId}/properties` is secure because the rule only needs to check if `request.auth.uid == userId`. This prevents unauthorized access and ensures that rules do not act as filters.\n\n**Structural Segregation:** Data is segregated based on ownership. Each user's properties, tenants, agreements, expenses, and reports are stored in separate subcollections under their user document. This ensures that data with different access needs (e.g., one user's properties vs. another user's properties) are not mixed in the same collection, simplifying security rules."
+  }
+}
