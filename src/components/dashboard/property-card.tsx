@@ -2,7 +2,6 @@
 
 import Image from 'next/image';
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import type { Property } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Card } from '@/components/ui/card';
@@ -12,9 +11,10 @@ import { Skeleton } from '../ui/skeleton';
 
 type PropertyCardProps = {
   property: Property;
+  onSelect?: () => void;
 };
 
-export function PropertyCard({ property }: PropertyCardProps) {
+export function PropertyCard({ property, onSelect }: PropertyCardProps) {
   const [formattedIncome, setFormattedIncome] = useState<string | null>(null);
   const [formattedExpenses, setFormattedExpenses] = useState<string | null>(null);
   const [formattedProfit, setFormattedProfit] = useState<string | null>(null);
@@ -35,7 +35,7 @@ export function PropertyCard({ property }: PropertyCardProps) {
   const profitability = property.totalIncome > 0 ? (profit / property.totalIncome) * 100 : 0;
 
   return (
-    <Link href={`/properties/${property.id}`} className="block group">
+    <div onClick={onSelect} className="block group cursor-pointer">
         <Card className="glassmorphism overflow-hidden relative rounded-3xl p-4 flex flex-col justify-between h-96 transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-2xl group-hover:shadow-primary/20">
         {image && (
             <Image
@@ -93,6 +93,6 @@ export function PropertyCard({ property }: PropertyCardProps) {
             </div>
         </div>
         </Card>
-    </Link>
+    </div>
   );
 }
