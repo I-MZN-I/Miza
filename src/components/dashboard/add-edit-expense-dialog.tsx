@@ -8,8 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { collection, doc, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import type { Expense, WithId } from '@/lib/types';
@@ -30,12 +30,11 @@ type AddEditExpenseDialogProps = {
   expense?: WithId<Expense> | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onExpenseUpdated: () => void;
 };
 
 const expenseCategories = ['Maintenance', 'Utilities', 'Taxes', 'Insurance', 'Management', 'Other'];
 
-export function AddEditExpenseDialog({ propertyId, expense, open, onOpenChange, onExpenseUpdated }: AddEditExpenseDialogProps) {
+export function AddEditExpenseDialog({ propertyId, expense, open, onOpenChange }: AddEditExpenseDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useUser();
   const firestore = useFirestore();
@@ -67,6 +66,15 @@ export function AddEditExpenseDialog({ propertyId, expense, open, onOpenChange, 
     }
   }, [expense, open, reset]);
 
+  const updateTotalExpenses = async () => {
+    if (!user) return;
+    const expensesCollectionRef = collection(firestore, 'users', user.uid, 'properties', propertyId, 'expenses');
+    const querySnapshot = await getDocs(expensesCollectionRef);
+    const totalExpenses = querySnapshot.docs.reduce((sum, doc) => sum + (doc.data().amount || 0), 0);
+    const propertyDocRef = doc(firestore, 'users', user.uid, 'properties', propertyId);
+    updateDocumentNonBlocking(propertyDocRef, { totalExpenses });
+  };
+
   const onSubmit = async (data: ExpenseFormValues) => {
     if (!user) {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
@@ -87,7 +95,7 @@ export function AddEditExpenseDialog({ propertyId, expense, open, onOpenChange, 
         toast({ title: 'Expense Added!', description: 'The expense has been recorded.' });
       }
       
-      onExpenseUpdated();
+      await updateTotalExpenses();
       onOpenChange(false);
     } catch (error: any) {
       toast({

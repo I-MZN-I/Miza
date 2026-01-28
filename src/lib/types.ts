@@ -14,6 +14,7 @@ export type Property = {
   status: 'active' | 'deleted';
   deletedAt?: Timestamp;
   totalRent?: number;
+  totalExpenses?: number;
   // These are populated from sub-collections
   tenants?: WithId<Tenant>[];
   expenseDetails?: WithId<Expense>[];

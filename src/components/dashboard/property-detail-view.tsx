@@ -7,8 +7,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { DocumentUploader } from '@/components/ai/document-uploader';
 import { ScrollArea } from '../ui/scroll-area';
-import { useCollection, useUser, useFirestore, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { collection, doc, serverTimestamp } from 'firebase/firestore';
+import { useCollection, useUser, useFirestore, useMemoFirebase, updateDocumentNonBlocking } from '@/firebase';
+import { collection, doc, serverTimestamp, getDocs, deleteDoc } from 'firebase/firestore';
 import { useState, useMemo } from 'react';
 import { Button } from '../ui/button';
 import { AddEditTenantDialog } from './add-edit-tenant-dialog';
@@ -164,11 +164,22 @@ export function PropertyDetailView({ property, onCloseDialog, viewMode = 'full' 
     setIsTenantDialogOpen(true);
   };
   
-  const handleDeleteTenant = (tenantId: string) => {
+  const updateTotalRent = async () => {
+    if (!user || !property) return;
+    const tenantsCollectionRef = collection(firestore, 'users', user.uid, 'properties', property.id, 'tenants');
+    const querySnapshot = await getDocs(tenantsCollectionRef);
+    const totalRent = querySnapshot.docs.reduce((sum, doc) => sum + (doc.data().rent || 0), 0);
+    const propertyDocRef = doc(firestore, 'users', user.uid, 'properties', property.id);
+    updateDocumentNonBlocking(propertyDocRef, { totalRent });
+  };
+
+  const handleDeleteTenant = async (tenantId: string) => {
     if (!user || !property) return;
     const tenantDoc = doc(firestore, 'users', user.uid, 'properties', property.id, 'tenants', tenantId);
-    deleteDocumentNonBlocking(tenantDoc);
-  }
+    await deleteDoc(tenantDoc);
+    await updateTotalRent();
+    toast({ title: 'Tenant Deleted' });
+  };
 
   const handleAddExpense = () => {
     setEditingExpense(null);
@@ -180,10 +191,21 @@ export function PropertyDetailView({ property, onCloseDialog, viewMode = 'full' 
     setIsExpenseDialogOpen(true);
   };
 
-  const handleDeleteExpense = (expenseId: string) => {
+  const updateTotalExpenses = async () => {
+    if (!user || !property) return;
+    const expensesCollectionRef = collection(firestore, 'users', user.uid, 'properties', property.id, 'expenses');
+    const querySnapshot = await getDocs(expensesCollectionRef);
+    const totalExpenses = querySnapshot.docs.reduce((sum, doc) => sum + (doc.data().amount || 0), 0);
+    const propertyDocRef = doc(firestore, 'users', user.uid, 'properties', property.id);
+    updateDocumentNonBlocking(propertyDocRef, { totalExpenses });
+  };
+
+  const handleDeleteExpense = async (expenseId: string) => {
     if (!user || !property) return;
     const expenseDoc = doc(firestore, 'users', user.uid, 'properties', property.id, 'expenses', expenseId);
-    deleteDocumentNonBlocking(expenseDoc);
+    await deleteDoc(expenseDoc);
+    await updateTotalExpenses();
+    toast({ title: 'Expense Deleted' });
   }
   
   const formatCurrency = (value: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(value);
@@ -476,7 +498,6 @@ export function PropertyDetailView({ property, onCloseDialog, viewMode = 'full' 
             expense={editingExpense}
             open={isExpenseDialogOpen}
             onOpenChange={setIsExpenseDialogOpen}
-            onExpenseUpdated={() => {}}
           />
         </>
       )}
