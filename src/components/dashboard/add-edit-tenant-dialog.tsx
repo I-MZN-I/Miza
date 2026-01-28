@@ -30,10 +30,9 @@ type AddEditTenantDialogProps = {
   tenant?: WithId<Tenant> | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onTenantUpdated: () => void;
 };
 
-export function AddEditTenantDialog({ propertyId, tenant, open, onOpenChange, onTenantUpdated }: AddEditTenantDialogProps) {
+export function AddEditTenantDialog({ propertyId, tenant, open, onOpenChange }: AddEditTenantDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useUser();
   const firestore = useFirestore();
@@ -117,7 +116,6 @@ export function AddEditTenantDialog({ propertyId, tenant, open, onOpenChange, on
         toast({ title: 'Tenant Added!', description: `${data.name} has been added.` });
       }
       
-      onTenantUpdated();
       onOpenChange(false);
     } catch (error: any) {
       toast({

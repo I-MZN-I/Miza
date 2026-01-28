@@ -48,7 +48,7 @@ export function PropertyDetailView({ property, onCloseDialog }: { property: With
     if (!user || !property) return null;
     return collection(firestore, 'users', user.uid, 'properties', property.id, 'tenants');
   }, [firestore, user, property]);
-  const { data: tenants, isLoading: isLoadingTenants, forceRefetch } = useCollection<Tenant>(tenantsQuery);
+  const { data: tenants, isLoading: isLoadingTenants } = useCollection<Tenant>(tenantsQuery);
 
   const expensesQuery = useMemoFirebase(() => {
     if (!user || !property) return null;
@@ -87,7 +87,6 @@ export function PropertyDetailView({ property, onCloseDialog }: { property: With
     updateDocumentNonBlocking(tenantRef, { payments: newPayments });
 
     toast({ title: 'Payment Recorded', description: `Rent for ${monthToPay} for ${tenant.name} marked as paid.` });
-    forceRefetch();
   };
 
   const handleAddTenant = () => {
@@ -337,9 +336,6 @@ export function PropertyDetailView({ property, onCloseDialog }: { property: With
             tenant={editingTenant}
             open={isTenantDialogOpen}
             onOpenChange={setIsTenantDialogOpen}
-            onTenantUpdated={() => {
-              forceRefetch();
-            }}
           />
           <AddEditExpenseDialog
             propertyId={property.id}
