@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { Property, WithId } from "@/lib/types";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { FinancialChart } from "./financial-chart";
+import { cn } from "@/lib/utils";
 
 
 function StatPill({
