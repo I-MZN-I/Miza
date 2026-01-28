@@ -9,13 +9,13 @@ import { DocumentUploader } from '@/components/ai/document-uploader';
 import { ScrollArea } from '../ui/scroll-area';
 import { useCollection, useUser, useFirestore, useMemoFirebase, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '../ui/button';
 import { AddEditTenantDialog } from './add-edit-tenant-dialog';
 import { AddEditExpenseDialog } from './add-edit-expense-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { EditPropertyDialog } from './edit-property-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 
 const getMonthsInRange = (startDate: Date, endDate: Date) => {
@@ -43,6 +43,9 @@ export function PropertyDetailView({ property, onCloseDialog, viewMode = 'full' 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<WithId<Expense> | null>(null);
 
+  const [filterYear, setFilterYear] = useState<string>(new Date().getFullYear().toString());
+  const [filterMonth, setFilterMonth] = useState<string>('all');
+
   const tenantsQuery = useMemoFirebase(() => {
     if (!user || !property) return null;
     return collection(firestore, 'users', user.uid, 'properties', property.id, 'tenants');
@@ -58,6 +61,16 @@ export function PropertyDetailView({ property, onCloseDialog, viewMode = 'full' 
   if (!property) {
     return null;
   }
+
+  const filteredExpenses = useMemo(() => {
+    if (!expenses) return [];
+    return expenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      const yearMatch = filterYear === 'all' || expenseDate.getFullYear().toString() === filterYear;
+      const monthMatch = filterMonth === 'all' || (expenseDate.getMonth() + 1).toString() === filterMonth;
+      return yearMatch && monthMatch;
+    });
+  }, [expenses, filterYear, filterMonth]);
   
   const handleSoftDeleteProperty = () => {
     if (!user || !property) return;
@@ -151,8 +164,22 @@ export function PropertyDetailView({ property, onCloseDialog, viewMode = 'full' 
         return <Badge variant="secondary" className="bg-profit/20 text-profit">Paid</Badge>;
     }
     
-    return <Button size="sm" onClick={() => handleRecordPayment(tenant)}>Record Payment</Button>;
+    if (viewMode === 'dashboard') {
+        return <Button size="sm" onClick={() => handleRecordPayment(tenant)}>Record Payment</Button>;
+    }
+
+    return <Badge variant="destructive">Pending</Badge>;
   }
+
+  const years = Array.from({ length: 5 }, (_, i) => (new Date().getFullYear() - i).toString());
+  const months = [
+    { value: '1', label: 'January' }, { value: '2', label: 'February' }, { value: '3', label: 'March' },
+    { value: '4', label: 'April' }, { value: '5', label: 'May' }, { value: '6', label: 'June' },
+    { value: '7', label: 'July' }, { value: '8', label: 'August' }, { value: '9', label: 'September' },
+    { value: '10', label: 'October' }, { value: '11', label: 'November' }, { value: '12', label: 'December' }
+  ];
+
+  const expensesToDisplay = viewMode === 'full' ? filteredExpenses : expenses;
 
   return (
     <>
@@ -238,7 +265,30 @@ export function PropertyDetailView({ property, onCloseDialog, viewMode = 'full' 
                         <CardDescription>Breakdown of all expenses for this property.</CardDescription>
                     </div>
                 </div>
-                 <Button onClick={handleAddExpense} size="sm"><Plus className="mr-2 h-4 w-4" /> Add Expense</Button>
+                 {viewMode === 'dashboard' ? (
+                    <Button onClick={handleAddExpense} size="sm"><Plus className="mr-2 h-4 w-4" /> Add Expense</Button>
+                 ) : (
+                    <div className="flex gap-2">
+                        <Select value={filterYear} onValueChange={setFilterYear}>
+                            <SelectTrigger className="w-[100px] bg-white/5">
+                                <SelectValue placeholder="Year" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Years</SelectItem>
+                                {years.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                        <Select value={filterMonth} onValueChange={setFilterMonth}>
+                            <SelectTrigger className="w-[120px] bg-white/5">
+                                <SelectValue placeholder="Month" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Months</SelectItem>
+                                {months.map(month => <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                 )}
               </div>
           </CardHeader>
           <CardContent className="p-0">
@@ -250,11 +300,11 @@ export function PropertyDetailView({ property, onCloseDialog, viewMode = 'full' 
                   <TableHead>Category</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Date</TableHead>
-                  {viewMode === 'full' && <TableHead className="text-right">Actions</TableHead>}
+                  {viewMode === 'dashboard' && <TableHead className="text-right">Actions</TableHead>}
                   </TableRow>
               </TableHeader>
               <TableBody>
-                  {expenses?.map(expense => (
+                  {expensesToDisplay?.map(expense => (
                   <TableRow key={expense.id} className="border-white/10 hover:bg-primary/5">
                       <TableCell className="font-medium">{expense.description}</TableCell>
                       <TableCell>
@@ -262,7 +312,7 @@ export function PropertyDetailView({ property, onCloseDialog, viewMode = 'full' 
                       </TableCell>
                       <TableCell>{formatCurrency(expense.amount)}</TableCell>
                       <TableCell>{new Date(expense.date).toLocaleDateString()}</TableCell>
-                      {viewMode === 'full' && (
+                      {viewMode === 'dashboard' && (
                         <TableCell className="text-right">
                             <Button variant="ghost" size="icon" onClick={() => handleEditExpense(expense)}><Edit className="h-4 w-4" /></Button>
                             <AlertDialog>
@@ -292,31 +342,51 @@ export function PropertyDetailView({ property, onCloseDialog, viewMode = 'full' 
           </CardContent>
           </Card>
           
-          <Card className="bg-transparent border-none shadow-none">
-              <CardHeader>
-                  <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10 text-primary">
-                          <FileText className="h-6 w-6"/>
-                      </div>
-                      <div>
-                          <CardTitle className="font-headline text-lg">Documents</CardTitle>
-                          <CardDescription>Upload and manage lease agreements, receipts, and other documents.</CardDescription>
-                      </div>
-                  </div>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                  <DocumentUploader
-                      title="Upload Lease Document"
-                      description="Extract tenant name, rent, and lease duration automatically."
-                      feature="lease"
-                  />
-                  <DocumentUploader
-                      title="Upload Expense Receipt"
-                      description="Categorize expenses automatically from receipts and bills."
-                      feature="expense"
-                  />
-              </CardContent>
-          </Card>
+          {viewMode === 'full' && (
+             <Card className="bg-transparent border-none shadow-none">
+                <CardHeader>
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10 text-primary">
+                            <FileText className="h-6 w-6"/>
+                        </div>
+                        <div>
+                            <CardTitle className="font-headline text-lg">Lease Documents</CardTitle>
+                            <CardDescription>Upload and manage lease agreements.</CardDescription>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <DocumentUploader
+                        title="Upload Lease Document"
+                        description="Extract tenant name, rent, and lease duration automatically."
+                        feature="lease"
+                    />
+                </CardContent>
+            </Card>
+          )}
+
+           {viewMode === 'dashboard' && (
+             <Card className="bg-transparent border-none shadow-none">
+                <CardHeader>
+                    <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10 text-primary">
+                            <FileText className="h-6 w-6"/>
+                        </div>
+                        <div>
+                            <CardTitle className="font-headline text-lg">Expense Receipts</CardTitle>
+                            <CardDescription>Upload and categorize expense receipts.</CardDescription>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                     <DocumentUploader
+                        title="Upload Expense Receipt"
+                        description="Categorize expenses automatically from receipts and bills."
+                        feature="expense"
+                    />
+                </CardContent>
+            </Card>
+          )}
 
           {viewMode === 'full' && (
             <Card className="bg-transparent border-destructive/50 border shadow-none">
@@ -369,5 +439,3 @@ export function PropertyDetailView({ property, onCloseDialog, viewMode = 'full' 
     </>
   );
 }
-
-    
