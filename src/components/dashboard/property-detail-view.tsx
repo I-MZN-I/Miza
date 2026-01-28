@@ -42,9 +42,8 @@ export function PropertyDetailView({ property, onCloseDialog, viewMode = 'full' 
   const [editingTenant, setEditingTenant] = useState<WithId<Tenant> | null>(null);
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<WithId<Expense> | null>(null);
-
-  const [filterYear, setFilterYear] = useState<string>(new Date().getFullYear().toString());
-  const [filterMonth, setFilterMonth] = useState<string>('all');
+  
+  const [expenseFilter, setExpenseFilter] = useState<'currentMonth' | 'last6Months' | 'lastYear'>('currentMonth');
 
   const tenantsQuery = useMemoFirebase(() => {
     if (!user || !property) return null;
@@ -64,13 +63,32 @@ export function PropertyDetailView({ property, onCloseDialog, viewMode = 'full' 
 
   const filteredExpenses = useMemo(() => {
     if (!expenses) return [];
+
+    const now = new Date();
+    let startDate: Date;
+
+    switch (expenseFilter) {
+        case 'last6Months':
+            startDate = new Date();
+            startDate.setMonth(now.getMonth() - 6);
+            break;
+        case 'lastYear':
+            startDate = new Date();
+            startDate.setFullYear(now.getFullYear() - 1);
+            break;
+        case 'currentMonth':
+        default:
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            break;
+    }
+    
+    const endDate = new Date(); // up to today
+
     return expenses.filter(expense => {
-      const expenseDate = new Date(expense.date);
-      const yearMatch = filterYear === 'all' || expenseDate.getFullYear().toString() === filterYear;
-      const monthMatch = filterMonth === 'all' || (expenseDate.getMonth() + 1).toString() === filterMonth;
-      return yearMatch && monthMatch;
+        const expenseDate = new Date(expense.date);
+        return expenseDate >= startDate && expenseDate <= endDate;
     });
-  }, [expenses, filterYear, filterMonth]);
+  }, [expenses, expenseFilter]);
   
   const handleSoftDeleteProperty = () => {
     if (!user || !property) return;
@@ -171,14 +189,6 @@ export function PropertyDetailView({ property, onCloseDialog, viewMode = 'full' 
     return <Badge variant="destructive">Pending</Badge>;
   }
 
-  const years = Array.from({ length: 5 }, (_, i) => (new Date().getFullYear() - i).toString());
-  const months = [
-    { value: '1', label: 'January' }, { value: '2', label: 'February' }, { value: '3', label: 'March' },
-    { value: '4', label: 'April' }, { value: '5', label: 'May' }, { value: '6', label: 'June' },
-    { value: '7', label: 'July' }, { value: '8', label: 'August' }, { value: '9', label: 'September' },
-    { value: '10', label: 'October' }, { value: '11', label: 'November' }, { value: '12', label: 'December' }
-  ];
-
   const expensesToDisplay = viewMode === 'full' ? filteredExpenses : expenses;
 
   return (
@@ -268,26 +278,16 @@ export function PropertyDetailView({ property, onCloseDialog, viewMode = 'full' 
                  {viewMode === 'dashboard' ? (
                     <Button onClick={handleAddExpense} size="sm"><Plus className="mr-2 h-4 w-4" /> Add Expense</Button>
                  ) : (
-                    <div className="flex gap-2">
-                        <Select value={filterYear} onValueChange={setFilterYear}>
-                            <SelectTrigger className="w-[100px] bg-white/5">
-                                <SelectValue placeholder="Year" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Years</SelectItem>
-                                {years.map(year => <SelectItem key={year} value={year}>{year}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                        <Select value={filterMonth} onValueChange={setFilterMonth}>
-                            <SelectTrigger className="w-[120px] bg-white/5">
-                                <SelectValue placeholder="Month" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Months</SelectItem>
-                                {months.map(month => <SelectItem key={month.value} value={month.value}>{month.label}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    <Select value={expenseFilter} onValueChange={(value) => setExpenseFilter(value as any)}>
+                        <SelectTrigger className="w-[180px] bg-white/5">
+                            <SelectValue placeholder="Filter expenses" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="currentMonth">Current Month</SelectItem>
+                            <SelectItem value="last6Months">Last 6 Months</SelectItem>
+                            <SelectItem value="lastYear">Last 1 Year</SelectItem>
+                        </SelectContent>
+                    </Select>
                  )}
               </div>
           </CardHeader>
