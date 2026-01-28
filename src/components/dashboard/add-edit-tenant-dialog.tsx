@@ -33,6 +33,21 @@ type AddEditTenantDialogProps = {
   onOpenChange: (open: boolean) => void;
 };
 
+const getMonthsInRange = (startDate: Date, endDate: Date) => {
+    const months = [];
+    let currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    const lastPayableMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 0);
+
+    while (currentDate <= lastPayableMonth) {
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+        months.push(`${year}-${month}`);
+        currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+    return months;
+};
+
+
 export function AddEditTenantDialog({ propertyId, tenant, open, onOpenChange }: AddEditTenantDialogProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useUser();
@@ -95,27 +110,47 @@ export function AddEditTenantDialog({ propertyId, tenant, open, onOpenChange }: 
   };
 
   const onSubmit = async (data: TenantFormValues) => {
-    if (!user) {
+    if (!user || !tenantsCollectionRef) {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
       return;
     }
 
     setIsLoading(true);
     try {
-      const tenantData: Partial<Tenant> = {
-        ...data,
-        propertyId: propertyId,
-        rent: Number(data.rent),
-        rentStartsFrom: data.rentStartsFrom || data.moveInDate,
-      };
-
       if (isEditing && tenant) {
+        const tenantData: Partial<Tenant> = {
+          ...data,
+          propertyId: propertyId,
+          rent: Number(data.rent),
+          rentStartsFrom: data.rentStartsFrom || tenant.rentStartsFrom || data.moveInDate,
+        };
         const tenantDoc = doc(tenantsCollectionRef, tenant.id);
         setDocumentNonBlocking(tenantDoc, tenantData, { merge: true });
         await updateTotalRent(data, tenant);
         toast({ title: 'Tenant Updated!', description: `${data.name} has been updated.` });
       } else {
-        addDocumentNonBlocking(tenantsCollectionRef!, tenantData);
+        const newPayments: { [key: string]: { date: string } } = {};
+        
+        if (!data.rentStartsFrom) {
+            const moveIn = new Date(data.moveInDate);
+            const today = new Date();
+            if (moveIn < today) {
+                const pastMonthsDue = getMonthsInRange(moveIn, today);
+                for (const monthKey of pastMonthsDue) {
+                    newPayments[monthKey] = { date: new Date().toISOString() };
+                }
+            }
+        }
+        
+        const tenantData: Partial<Tenant> = {
+            ...data,
+            propertyId: propertyId,
+            rent: Number(data.rent),
+            rentStartsFrom: data.rentStartsFrom || data.moveInDate,
+            payments: newPayments,
+        };
+
+        addDocumentNonBlocking(tenantsCollectionRef, tenantData);
         await updateTotalRent(data);
         toast({ title: 'Tenant Added!', description: `${data.name} has been added.` });
       }
@@ -186,5 +221,3 @@ export function AddEditTenantDialog({ propertyId, tenant, open, onOpenChange }: 
     </Dialog>
   );
 }
-
-    
