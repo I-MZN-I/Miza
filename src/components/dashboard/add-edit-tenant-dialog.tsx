@@ -134,10 +134,29 @@ export function AddEditTenantDialog({ propertyId, tenant, open, onOpenChange }: 
         if (!data.rentStartsFrom) {
             const moveIn = new Date(data.moveInDate);
             const today = new Date();
+            // This logic assumes rent is paid for the month they move in.
+            // It pre-populates payments for all past months.
             if (moveIn < today) {
-                const pastMonthsDue = getMonthsInRange(moveIn, today);
-                for (const monthKey of pastMonthsDue) {
-                    newPayments[monthKey] = { date: new Date().toISOString() };
+                // Rent cycle: payment in Feb is for Jan. So, if they move in Jan, first payment is in Feb.
+                // We need to mark all months *before* the current month's due period as paid.
+                const firstRentDueDate = new Date(moveIn.getFullYear(), moveIn.getMonth() + 1, 1);
+                const pastMonthsPaid = getMonthsInRange(firstRentDueDate, today);
+                
+                // Let's re-evaluate: If they move in Jan, and it's now March, they should have paid for Jan and Feb.
+                // The `getMonthsInRange` includes the end month.
+                // If today is March 15th, and they moved in Jan 10th, they owe for Jan & Feb.
+                // If `rentStartsFrom` is blank, it means they are up to date.
+                // It means they have paid for all months up to the one due in the current month.
+                
+                const allPastMonths = getMonthsInRange(moveIn, new Date());
+                const currentMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+                
+                for (const monthKey of allPastMonths) {
+                    // If the user is up-to-date, we assume they've paid for all months except the one
+                    // that is due THIS month (which is last month's rent).
+                    if (monthKey !== currentMonthKey) {
+                        newPayments[monthKey] = { date: new Date().toISOString() };
+                    }
                 }
             }
         }
@@ -206,7 +225,7 @@ export function AddEditTenantDialog({ propertyId, tenant, open, onOpenChange }: 
            <div className="space-y-2">
                 <Label htmlFor="rentStartsFrom">Rent Calculation Start Date (Optional)</Label>
                 <Input id="rentStartsFrom" type="date" {...register('rentStartsFrom')} className="bg-white/5" />
-                <p className="text-xs text-muted-foreground">If a tenant has pending rent, set this to the first month they owe. Otherwise, leave blank.</p>
+                <p className="text-xs text-muted-foreground">To track pending rent, select the first month for which payment is due. Leave blank if the tenant is up to date.</p>
                 {errors.rentStartsFrom && <p className="text-sm text-destructive">{errors.rentStartsFrom.message}</p>}
             </div>
           <DialogFooter>
