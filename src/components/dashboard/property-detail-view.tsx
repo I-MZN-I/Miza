@@ -2,7 +2,7 @@
 
 import type { Property, Tenant, Expense, WithId } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { User, DollarSign, FileText, Loader2, Plus, Edit, Trash2 } from 'lucide-react';
+import { User, DollarSign, FileText, Loader2, Plus, Edit, Trash2, Undo2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { DocumentUploader } from '@/components/ai/document-uploader';
@@ -133,6 +133,27 @@ export function PropertyDetailView({ property, onCloseDialog, viewMode = 'full' 
     toast({ title: 'Payment Recorded', description: `Rent for ${oldestUnpaidMonth} for ${tenant.name} marked as paid.` });
   };
 
+  const handleRevertPayment = (tenant: WithId<Tenant>) => {
+    if(!user || !property) return;
+
+    if (!tenant.payments || Object.keys(tenant.payments).length === 0) {
+        toast({ variant: 'destructive', title: 'No Payments to Revert', description: 'This tenant has not made any recorded payments.'});
+        return;
+    }
+
+    const paidMonths = Object.keys(tenant.payments).sort();
+    const lastPaidMonth = paidMonths[paidMonths.length - 1];
+    
+    const newPayments = { ...tenant.payments };
+    delete newPayments[lastPaidMonth];
+
+    const tenantRef = doc(firestore, 'users', user.uid, 'properties', property.id, 'tenants', tenant.id);
+    
+    updateDocumentNonBlocking(tenantRef, { payments: newPayments });
+
+    toast({ title: 'Payment Reverted', description: `Rent for ${lastPaidMonth} for ${tenant.name} marked as pending.` });
+  };
+
   const handleAddTenant = () => {
     setEditingTenant(null);
     setIsTenantDialogOpen(true);
@@ -210,8 +231,30 @@ export function PropertyDetailView({ property, onCloseDialog, viewMode = 'full' 
       );
     }
     
-    if (viewMode === 'dashboard' && getPendingMonthsCount(tenant) > 0) {
-      return <Button size="sm" onClick={() => handleRecordPayment(tenant)}>Record Payment</Button>;
+    if (viewMode === 'dashboard') {
+      const pendingCount = getPendingMonthsCount(tenant);
+  
+      if (pendingCount > 0) {
+        return <Button size="sm" onClick={() => handleRecordPayment(tenant)}>Record Payment</Button>;
+      }
+  
+      // Check if tenant is new (no rent due yet)
+      if (!tenant.moveInDate) return null;
+      const startDate = tenant.rentStartsFrom ? new Date(tenant.rentStartsFrom) : new Date(tenant.moveInDate);
+      const monthsDue = getMonthsInRange(startDate, new Date());
+      if (monthsDue.length === 0) {
+        return null; // New tenant, no actions yet.
+      }
+  
+      // If no pending months, but there are payments, it means they are "Paid" and can be reverted.
+      const hasPayments = tenant.payments && Object.keys(tenant.payments).length > 0;
+      if (pendingCount === 0 && hasPayments) {
+        return (
+          <Button variant="ghost" size="sm" onClick={() => handleRevertPayment(tenant)}>
+            <Undo2 className="mr-2 h-4 w-4" /> Revert
+          </Button>
+        );
+      }
     }
 
     return null;
