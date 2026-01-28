@@ -37,7 +37,9 @@ export default function PropertiesPage() {
             </Button>
         </AddPropertyDialog>
       </header>
-      <PropertyList properties={properties} isLoading={isLoading} />
+      <PropertyList properties={properties} isLoading={isLoading} viewMode="full" />
     </div>
   );
 }
+
+    

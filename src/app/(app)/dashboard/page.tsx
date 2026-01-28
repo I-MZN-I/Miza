@@ -30,7 +30,9 @@ export default function DashboardPage() {
         </div>
       </header>
       <AnalyticsBar properties={properties} isLoading={isLoading} />
-      <PropertyList properties={properties} isLoading={isLoading} />
+      <PropertyList properties={properties} isLoading={isLoading} viewMode="dashboard" />
     </div>
   );
 }
+
+    

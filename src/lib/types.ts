@@ -26,6 +26,7 @@ export type Tenant = {
   phone: string;
   rent: number;
   moveInDate: string;
+  rentStartsFrom?: string;
   moveOutDate?: string;
   payments?: { [key: string]: { date: string; } };
 };
@@ -47,3 +48,5 @@ export type Agreement = {
   rentAmount: number;
   terms: string;
 };
+
+    

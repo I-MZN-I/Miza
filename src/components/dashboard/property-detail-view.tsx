@@ -21,7 +21,7 @@ import { EditPropertyDialog } from './edit-property-dialog';
 const getMonthsInRange = (startDate: Date, endDate: Date) => {
     const months = [];
     let currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-    const lastDate = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+    const lastDate = new Date(endDate.getFullYear(), endDate.getMonth() - 1, 1);
 
     while (currentDate <= lastDate) {
         const year = currentDate.getFullYear();
@@ -33,7 +33,7 @@ const getMonthsInRange = (startDate: Date, endDate: Date) => {
 };
 
 
-export function PropertyDetailView({ property, onCloseDialog }: { property: WithId<Property> | null, onCloseDialog: () => void }) {
+export function PropertyDetailView({ property, onCloseDialog, viewMode = 'full' }: { property: WithId<Property> | null, onCloseDialog: () => void, viewMode?: 'full' | 'dashboard' }) {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -42,7 +42,6 @@ export function PropertyDetailView({ property, onCloseDialog }: { property: With
   const [editingTenant, setEditingTenant] = useState<WithId<Tenant> | null>(null);
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<WithId<Expense> | null>(null);
-  const [isPropertyDialogOpen, setIsPropertyDialogOpen] = useState(false);
 
   const tenantsQuery = useMemoFirebase(() => {
     if (!user || !property) return null;
@@ -74,19 +73,24 @@ export function PropertyDetailView({ property, onCloseDialog }: { property: With
   const handleRecordPayment = (tenant: WithId<Tenant>) => {
     if(!user || !property) return;
 
-    const allMonths = getMonthsInRange(new Date(tenant.moveInDate), new Date());
+    const startDate = tenant.rentStartsFrom ? new Date(tenant.rentStartsFrom) : new Date(tenant.moveInDate);
+    const allMonths = getMonthsInRange(startDate, new Date());
     const oldestUnpaidMonth = allMonths.find(month => !tenant.payments?.[month]);
-    const monthToPay = oldestUnpaidMonth || allMonths[allMonths.length - 1];
+    
+    if (!oldestUnpaidMonth) {
+        toast({ variant: 'destructive', title: 'No Pending Rent', description: 'This tenant is all caught up.'});
+        return;
+    }
 
     const tenantRef = doc(firestore, 'users', user.uid, 'properties', property.id, 'tenants', tenant.id);
     const newPayments = {
       ...tenant.payments,
-      [monthToPay]: { date: new Date().toISOString() }
+      [oldestUnpaidMonth]: { date: new Date().toISOString() }
     };
     
     updateDocumentNonBlocking(tenantRef, { payments: newPayments });
 
-    toast({ title: 'Payment Recorded', description: `Rent for ${monthToPay} for ${tenant.name} marked as paid.` });
+    toast({ title: 'Payment Recorded', description: `Rent for ${oldestUnpaidMonth} for ${tenant.name} marked as paid.` });
   };
 
   const handleAddTenant = () => {
@@ -123,21 +127,31 @@ export function PropertyDetailView({ property, onCloseDialog }: { property: With
   
   const formatCurrency = (value: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(value);
 
+  const getPendingMonths = (tenant: WithId<Tenant>) => {
+      if (!tenant.moveInDate) return 0;
+      const startDate = tenant.rentStartsFrom ? new Date(tenant.rentStartsFrom) : new Date(tenant.moveInDate);
+      const allMonths = getMonthsInRange(startDate, new Date());
+      const unpaidMonths = allMonths.filter(month => !tenant.payments?.[month]);
+      return unpaidMonths.length;
+  }
+
   const getRentStatus = (tenant: WithId<Tenant>) => {
     const today = new Date();
-    const currentMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
-    const paymentForCurrentMonth = tenant.payments?.[currentMonthKey];
+    const lastMonthDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const lastMonthKey = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`;
+    
+    const startDate = tenant.rentStartsFrom ? new Date(tenant.rentStartsFrom) : new Date(tenant.moveInDate);
+    if (startDate > lastMonthDate) {
+        return <Badge variant="secondary">New Tenant</Badge>;
+    }
+    
+    const paymentForLastMonth = tenant.payments?.[lastMonthKey];
 
-    if (paymentForCurrentMonth) {
+    if (paymentForLastMonth) {
         return <Badge variant="secondary" className="bg-profit/20 text-profit">Paid</Badge>;
     }
+    
     return <Button size="sm" onClick={() => handleRecordPayment(tenant)}>Record Payment</Button>;
-  }
-  
-  const getPendingMonths = (tenant: WithId<Tenant>) => {
-      const allMonths = getMonthsInRange(new Date(tenant.moveInDate), new Date());
-      const unpaidMonths = allMonths.filter(month => !tenant.payments?.[month]);
-      return unpaidMonths.length > 1 ? unpaidMonths.length-1 : 0;
   }
 
   return (
@@ -156,7 +170,7 @@ export function PropertyDetailView({ property, onCloseDialog }: { property: With
                           <CardDescription>Manage tenants and their rent.</CardDescription>
                       </div>
                   </div>
-                   <Button onClick={handleAddTenant} size="sm"><Plus className="mr-2 h-4 w-4" /> Add Tenant</Button>
+                   {viewMode === 'full' && <Button onClick={handleAddTenant} size="sm"><Plus className="mr-2 h-4 w-4" /> Add Tenant</Button>}
               </div>
           </CardHeader>
           <CardContent className="p-0">
@@ -167,40 +181,42 @@ export function PropertyDetailView({ property, onCloseDialog }: { property: With
                   <TableHead>Name</TableHead>
                   <TableHead>Rent</TableHead>
                   <TableHead>Rent Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                   {viewMode === 'full' && <TableHead className="text-right">Actions</TableHead>}
                   </TableRow>
               </TableHeader>
               <TableBody>
                   {tenants?.map(tenant => {
-                      const pendingMonths = getPendingMonths(tenant);
+                      const pendingCount = getPendingMonths(tenant);
                       return (
                       <TableRow key={tenant.id} className="border-white/10 hover:bg-primary/5">
                           <TableCell className="font-medium">
                               {tenant.name}
-                              {pendingMonths > 0 && <Badge variant="destructive" className="ml-2">{pendingMonths} month{pendingMonths > 1 ? 's' : ''} pending</Badge>}
+                              {pendingCount > 0 && <Badge variant="destructive" className="ml-2">{pendingCount} month{pendingCount > 1 ? 's' : ''} pending</Badge>}
                             </TableCell>
                           <TableCell>{formatCurrency(tenant.rent)}</TableCell>
                           <TableCell>{getRentStatus(tenant)}</TableCell>
-                          <TableCell className="text-right">
-                              <Button variant="ghost" size="icon" onClick={() => handleEditTenant(tenant)}><Edit className="h-4 w-4" /></Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      This will permanently delete the tenant {tenant.name}. This action cannot be undone.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteTenant(tenant.id)}>Delete</AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                          </TableCell>
+                          {viewMode === 'full' && (
+                            <TableCell className="text-right">
+                                <Button variant="ghost" size="icon" onClick={() => handleEditTenant(tenant)}><Edit className="h-4 w-4" /></Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This will permanently delete the tenant {tenant.name}. This action cannot be undone.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDeleteTenant(tenant.id)}>Delete</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                            </TableCell>
+                          )}
                       </TableRow>
                       )
                     })}
@@ -234,7 +250,7 @@ export function PropertyDetailView({ property, onCloseDialog }: { property: With
                   <TableHead>Category</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  {viewMode === 'full' && <TableHead className="text-right">Actions</TableHead>}
                   </TableRow>
               </TableHeader>
               <TableBody>
@@ -246,26 +262,28 @@ export function PropertyDetailView({ property, onCloseDialog }: { property: With
                       </TableCell>
                       <TableCell>{formatCurrency(expense.amount)}</TableCell>
                       <TableCell>{new Date(expense.date).toLocaleDateString()}</TableCell>
-                      <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => handleEditExpense(expense)}><Edit className="h-4 w-4" /></Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will permanently delete this expense. This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDeleteExpense(expense.id)}>Delete</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                      </TableCell>
+                      {viewMode === 'full' && (
+                        <TableCell className="text-right">
+                            <Button variant="ghost" size="icon" onClick={() => handleEditExpense(expense)}><Edit className="h-4 w-4" /></Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will permanently delete this expense. This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDeleteExpense(expense.id)}>Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                        </TableCell>
+                      )}
                   </TableRow>
                   ))}
               </TableBody>
@@ -300,33 +318,35 @@ export function PropertyDetailView({ property, onCloseDialog }: { property: With
               </CardContent>
           </Card>
 
-          <Card className="bg-transparent border-destructive/50 border shadow-none">
-             <CardHeader>
-                 <CardTitle className="text-destructive">Danger Zone</CardTitle>
-                 <CardDescription>
-                    Deleting a property will move it to the "Recently Deleted" bin in your profile, where it will be permanently removed after 10 days.
-                 </CardDescription>
-             </CardHeader>
-             <CardContent>
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="destructive">Delete this property</Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This will move the property '{property.buildingName}' to the bin. You can restore it for 10 days.
-                        </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleSoftDeleteProperty}>Yes, delete property</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-             </CardContent>
-          </Card>
+          {viewMode === 'full' && (
+            <Card className="bg-transparent border-destructive/50 border shadow-none">
+               <CardHeader>
+                   <CardTitle className="text-destructive">Danger Zone</CardTitle>
+                   <CardDescription>
+                      Deleting a property will move it to the "Recently Deleted" bin in your profile, where it will be permanently removed after 10 days.
+                   </CardDescription>
+               </CardHeader>
+               <CardContent>
+                  <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                          <Button variant="destructive">Delete this property</Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                          <AlertDialogHeader>
+                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                              This will move the property '{property.buildingName}' to the bin. You can restore it for 10 days.
+                          </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleSoftDeleteProperty}>Yes, delete property</AlertDialogAction>
+                          </AlertDialogFooter>
+                      </AlertDialogContent>
+                  </AlertDialog>
+               </CardContent>
+            </Card>
+          )}
         </div>
       </ScrollArea>
        {property && (
@@ -342,17 +362,12 @@ export function PropertyDetailView({ property, onCloseDialog }: { property: With
             expense={editingExpense}
             open={isExpenseDialogOpen}
             onOpenChange={setIsExpenseDialogOpen}
-            onExpenseUpdated={() => {
-              // Real-time listener in useCollection handles the update
-            }}
-          />
-          <EditPropertyDialog 
-            property={property}
-            open={isPropertyDialogOpen}
-            onOpenChange={setIsPropertyDialogOpen}
+            onExpenseUpdated={() => {}}
           />
         </>
       )}
     </>
   );
 }
+
+    

@@ -8,8 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useCollection, updateDocumentNonBlocking } from '@/firebase';
-import { collection, doc, getDocs, query } from 'firebase/firestore';
+import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { collection, doc, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import type { Tenant, WithId } from '@/lib/types';
@@ -21,6 +21,7 @@ const tenantSchema = z.object({
   phone: z.string().min(10, { message: 'Phone number must be at least 10 digits' }),
   rent: z.preprocess((val) => Number(val), z.number().positive({ message: 'Rent must be a positive number' })),
   moveInDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid date' }),
+  rentStartsFrom: z.string().optional(),
 });
 
 type TenantFormValues = z.infer<typeof tenantSchema>;
@@ -55,6 +56,7 @@ export function AddEditTenantDialog({ propertyId, tenant, open, onOpenChange }: 
         reset({
           ...tenant,
           moveInDate: tenant.moveInDate ? new Date(tenant.moveInDate).toISOString().split('T')[0] : '',
+          rentStartsFrom: tenant.rentStartsFrom ? new Date(tenant.rentStartsFrom).toISOString().split('T')[0] : '',
         });
       } else {
         reset({
@@ -63,6 +65,7 @@ export function AddEditTenantDialog({ propertyId, tenant, open, onOpenChange }: 
           phone: '',
           rent: 0,
           moveInDate: new Date().toISOString().split('T')[0],
+          rentStartsFrom: '',
         });
       }
     }
@@ -99,10 +102,11 @@ export function AddEditTenantDialog({ propertyId, tenant, open, onOpenChange }: 
 
     setIsLoading(true);
     try {
-      const tenantData = {
+      const tenantData: Partial<Tenant> = {
         ...data,
         propertyId: propertyId,
-        rent: Number(data.rent)
+        rent: Number(data.rent),
+        rentStartsFrom: data.rentStartsFrom || data.moveInDate,
       };
 
       if (isEditing && tenant) {
@@ -164,6 +168,12 @@ export function AddEditTenantDialog({ propertyId, tenant, open, onOpenChange }: 
                 {errors.moveInDate && <p className="text-sm text-destructive">{errors.moveInDate.message}</p>}
             </div>
           </div>
+           <div className="space-y-2">
+                <Label htmlFor="rentStartsFrom">Rent Calculation Start Date (Optional)</Label>
+                <Input id="rentStartsFrom" type="date" {...register('rentStartsFrom')} className="bg-white/5" />
+                <p className="text-xs text-muted-foreground">If a tenant has pending rent, set this to the first month they owe. Otherwise, leave blank.</p>
+                {errors.rentStartsFrom && <p className="text-sm text-destructive">{errors.rentStartsFrom.message}</p>}
+            </div>
           <DialogFooter>
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
             <Button type="submit" disabled={isLoading}>
@@ -176,3 +186,5 @@ export function AddEditTenantDialog({ propertyId, tenant, open, onOpenChange }: 
     </Dialog>
   );
 }
+
+    

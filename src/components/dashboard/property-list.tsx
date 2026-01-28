@@ -11,7 +11,7 @@ import { EditPropertyDialog } from './edit-property-dialog';
 import { Button } from '../ui/button';
 import { Edit } from 'lucide-react';
 
-export function PropertyList({ properties, isLoading }: { properties: WithId<Property>[] | null, isLoading: boolean }) {
+export function PropertyList({ properties, isLoading, viewMode = 'full' }: { properties: WithId<Property>[] | null, isLoading: boolean, viewMode?: 'full' | 'dashboard' }) {
   const [selectedProperty, setSelectedProperty] = useState<WithId<Property> | null>(null);
   const [isPropertyDialogOpen, setIsPropertyDialogOpen] = useState(false);
 
@@ -81,12 +81,14 @@ export function PropertyList({ properties, isLoading }: { properties: WithId<Pro
                           <DialogDescription className="text-base">{selectedProperty.location}</DialogDescription>
                       </div>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={handleEditProperty}>
-                        <Edit className="h-5 w-5" />
-                    </Button>
+                    {viewMode === 'full' && (
+                        <Button variant="ghost" size="icon" onClick={handleEditProperty}>
+                            <Edit className="h-5 w-5" />
+                        </Button>
+                    )}
                 </div>
               </DialogHeader>
-              <PropertyDetailView property={selectedProperty} onCloseDialog={handleCloseDialog} />
+              <PropertyDetailView property={selectedProperty} onCloseDialog={handleCloseDialog} viewMode={viewMode} />
             </>
            )}
         </DialogContent>
@@ -101,3 +103,5 @@ export function PropertyList({ properties, isLoading }: { properties: WithId<Pro
     </>
   );
 }
+
+    
