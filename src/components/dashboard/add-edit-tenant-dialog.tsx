@@ -8,15 +8,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { useUser, useFirestore, addDocumentNonBlocking, setDocumentNonBlocking, useCollection, updateDocumentNonBlocking } from '@/firebase';
+import { collection, doc, getDocs, query } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import type { Tenant, WithId } from '@/lib/types';
+import { useMemoFirebase } from '@/firebase/provider';
 
 const tenantSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
-  email: z.string().email({ message: 'Invalid email address' }),
+  email: z.string().email({ message: 'Invalid email address' }).optional().or(z.literal('')),
   phone: z.string().min(10, { message: 'Phone number must be at least 10 digits' }),
   rent: z.preprocess((val) => Number(val), z.number().positive({ message: 'Rent must be a positive number' })),
   moveInDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Invalid date' }),
@@ -43,6 +44,12 @@ export function AddEditTenantDialog({ propertyId, tenant, open, onOpenChange, on
     resolver: zodResolver(tenantSchema),
   });
 
+  const tenantsCollectionRef = useMemoFirebase(() => {
+      if (!user) return null;
+      return collection(firestore, 'users', user.uid, 'properties', propertyId, 'tenants');
+  }, [firestore, user, propertyId]);
+
+
   useEffect(() => {
     if (open) {
       if (tenant) {
@@ -62,6 +69,28 @@ export function AddEditTenantDialog({ propertyId, tenant, open, onOpenChange, on
     }
   }, [tenant, open, reset]);
   
+  const updateTotalRent = async (updatedTenantData: TenantFormValues, existingTenant?: WithId<Tenant> | null) => {
+    if (!user || !tenantsCollectionRef) return;
+    
+    const querySnapshot = await getDocs(tenantsCollectionRef);
+    let totalRent = 0;
+
+    querySnapshot.forEach(doc => {
+        const tenantData = doc.data() as Tenant;
+        if (doc.id === existingTenant?.id) {
+             totalRent += updatedTenantData.rent;
+        } else {
+            totalRent += tenantData.rent;
+        }
+    });
+
+    if (!existingTenant) {
+        totalRent += updatedTenantData.rent;
+    }
+
+    const propertyDocRef = doc(firestore, 'users', user.uid, 'properties', propertyId);
+    updateDocumentNonBlocking(propertyDocRef, { totalRent });
+  };
 
   const onSubmit = async (data: TenantFormValues) => {
     if (!user) {
@@ -77,14 +106,14 @@ export function AddEditTenantDialog({ propertyId, tenant, open, onOpenChange, on
         rent: Number(data.rent)
       };
 
-      const tenantsCollection = collection(firestore, 'users', user.uid, 'properties', propertyId, 'tenants');
-
       if (isEditing && tenant) {
-        const tenantDoc = doc(tenantsCollection, tenant.id);
+        const tenantDoc = doc(tenantsCollectionRef, tenant.id);
         setDocumentNonBlocking(tenantDoc, tenantData, { merge: true });
+        await updateTotalRent(data, tenant);
         toast({ title: 'Tenant Updated!', description: `${data.name} has been updated.` });
       } else {
-        addDocumentNonBlocking(tenantsCollection, tenantData);
+        addDocumentNonBlocking(tenantsCollectionRef!, tenantData);
+        await updateTotalRent(data);
         toast({ title: 'Tenant Added!', description: `${data.name} has been added.` });
       }
       
@@ -115,7 +144,7 @@ export function AddEditTenantDialog({ propertyId, tenant, open, onOpenChange, on
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email (Optional)</Label>
                 <Input id="email" type="email" {...register('email')} placeholder="john.doe@email.com" className="bg-white/5" />
                 {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>

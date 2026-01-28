@@ -94,6 +94,10 @@
           "type": ["string", "null"],
           "description": "Timestamp of when the property was soft-deleted.",
           "format": "date-time"
+        },
+        "totalRent": {
+          "type": "number",
+          "description": "The total rent from all tenants in the property."
         }
       },
       "required": [
@@ -147,13 +151,16 @@
           "type": "string",
           "description": "Date when the tenant moved out (if applicable).",
           "format": "date-time"
+        },
+        "payments": {
+          "type": "object",
+          "description": "Record of monthly rent payments. Key is 'YYYY-MM', value is an object with payment date."
         }
       },
       "required": [
         "id",
         "propertyId",
         "name",
-        "email",
         "phone",
         "rent",
         "moveInDate"

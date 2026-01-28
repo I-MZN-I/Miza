@@ -7,13 +7,21 @@ import { PropertyDetailView } from './property-detail-view';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import type { Property, WithId } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
+import { EditPropertyDialog } from './edit-property-dialog';
+import { Button } from '../ui/button';
+import { Edit } from 'lucide-react';
 
 export function PropertyList({ properties, isLoading }: { properties: WithId<Property>[] | null, isLoading: boolean }) {
   const [selectedProperty, setSelectedProperty] = useState<WithId<Property> | null>(null);
+  const [isPropertyDialogOpen, setIsPropertyDialogOpen] = useState(false);
 
   const handleCloseDialog = () => {
     setSelectedProperty(null);
   };
+  
+  const handleEditProperty = () => {
+    setIsPropertyDialogOpen(true);
+  }
 
   if (isLoading) {
     return (
@@ -56,21 +64,26 @@ export function PropertyList({ properties, isLoading }: { properties: WithId<Pro
            {selectedProperty && (
             <>
               <DialogHeader>
-                <div className="flex items-start gap-4">
-                    {selectedProperty.imageURL && (
-                      <div className="relative h-20 w-20 rounded-lg overflow-hidden shrink-0 shadow-lg">
-                          <Image
-                              src={selectedProperty.imageURL}
-                              alt={selectedProperty.buildingName}
-                              fill
-                              className="object-cover"
-                          />
+                <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-4">
+                      {selectedProperty.imageURL && (
+                        <div className="relative h-20 w-20 rounded-lg overflow-hidden shrink-0 shadow-lg">
+                            <Image
+                                src={selectedProperty.imageURL}
+                                alt={selectedProperty.buildingName}
+                                fill
+                                className="object-cover"
+                            />
+                        </div>
+                      )}
+                      <div className="pt-1">
+                          <DialogTitle className="font-headline text-2xl font-bold">{selectedProperty.buildingName}</DialogTitle>
+                          <DialogDescription className="text-base">{selectedProperty.location}</DialogDescription>
                       </div>
-                    )}
-                    <div className="pt-1">
-                        <DialogTitle className="font-headline text-2xl font-bold">{selectedProperty.buildingName}</DialogTitle>
-                        <DialogDescription className="text-base">{selectedProperty.location}</DialogDescription>
                     </div>
+                    <Button variant="ghost" size="icon" onClick={handleEditProperty}>
+                        <Edit className="h-5 w-5" />
+                    </Button>
                 </div>
               </DialogHeader>
               <PropertyDetailView property={selectedProperty} onCloseDialog={handleCloseDialog} />
@@ -78,6 +91,13 @@ export function PropertyList({ properties, isLoading }: { properties: WithId<Pro
            )}
         </DialogContent>
       </Dialog>
+      {selectedProperty && 
+        <EditPropertyDialog 
+            property={selectedProperty}
+            open={isPropertyDialogOpen}
+            onOpenChange={setIsPropertyDialogOpen}
+          />
+      }
     </>
   );
 }

@@ -15,6 +15,23 @@ import { AddEditTenantDialog } from './add-edit-tenant-dialog';
 import { AddEditExpenseDialog } from './add-edit-expense-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { EditPropertyDialog } from './edit-property-dialog';
+
+
+const getMonthsInRange = (startDate: Date, endDate: Date) => {
+    const months = [];
+    let currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+    const lastDate = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+
+    while (currentDate <= lastDate) {
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+        months.push(`${year}-${month}`);
+        currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+    return months;
+};
+
 
 export function PropertyDetailView({ property, onCloseDialog }: { property: WithId<Property> | null, onCloseDialog: () => void }) {
   const { user } = useUser();
@@ -25,12 +42,13 @@ export function PropertyDetailView({ property, onCloseDialog }: { property: With
   const [editingTenant, setEditingTenant] = useState<WithId<Tenant> | null>(null);
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<WithId<Expense> | null>(null);
+  const [isPropertyDialogOpen, setIsPropertyDialogOpen] = useState(false);
 
   const tenantsQuery = useMemoFirebase(() => {
     if (!user || !property) return null;
     return collection(firestore, 'users', user.uid, 'properties', property.id, 'tenants');
   }, [firestore, user, property]);
-  const { data: tenants, isLoading: isLoadingTenants } = useCollection<Tenant>(tenantsQuery);
+  const { data: tenants, isLoading: isLoadingTenants, forceRefetch } = useCollection<Tenant>(tenantsQuery);
 
   const expensesQuery = useMemoFirebase(() => {
     if (!user || !property) return null;
@@ -52,6 +70,25 @@ export function PropertyDetailView({ property, onCloseDialog }: { property: With
     toast({ title: 'Property Moved to Bin', description: `${property.buildingName} will be permanently deleted in 10 days.` });
     onCloseDialog();
   }
+  
+  const handleRecordPayment = (tenant: WithId<Tenant>) => {
+    if(!user || !property) return;
+
+    const allMonths = getMonthsInRange(new Date(tenant.moveInDate), new Date());
+    const oldestUnpaidMonth = allMonths.find(month => !tenant.payments?.[month]);
+    const monthToPay = oldestUnpaidMonth || allMonths[allMonths.length - 1];
+
+    const tenantRef = doc(firestore, 'users', user.uid, 'properties', property.id, 'tenants', tenant.id);
+    const newPayments = {
+      ...tenant.payments,
+      [monthToPay]: { date: new Date().toISOString() }
+    };
+    
+    updateDocumentNonBlocking(tenantRef, { payments: newPayments });
+
+    toast({ title: 'Payment Recorded', description: `Rent for ${monthToPay} for ${tenant.name} marked as paid.` });
+    forceRefetch();
+  };
 
   const handleAddTenant = () => {
     setEditingTenant(null);
@@ -87,6 +124,23 @@ export function PropertyDetailView({ property, onCloseDialog }: { property: With
   
   const formatCurrency = (value: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(value);
 
+  const getRentStatus = (tenant: WithId<Tenant>) => {
+    const today = new Date();
+    const currentMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+    const paymentForCurrentMonth = tenant.payments?.[currentMonthKey];
+
+    if (paymentForCurrentMonth) {
+        return <Badge variant="secondary" className="bg-profit/20 text-profit">Paid</Badge>;
+    }
+    return <Button size="sm" onClick={() => handleRecordPayment(tenant)}>Record Payment</Button>;
+  }
+  
+  const getPendingMonths = (tenant: WithId<Tenant>) => {
+      const allMonths = getMonthsInRange(new Date(tenant.moveInDate), new Date());
+      const unpaidMonths = allMonths.filter(month => !tenant.payments?.[month]);
+      return unpaidMonths.length > 1 ? unpaidMonths.length-1 : 0;
+  }
+
   return (
     <>
       <ScrollArea className="h-full flex-1 -mx-6">
@@ -113,38 +167,44 @@ export function PropertyDetailView({ property, onCloseDialog }: { property: With
                   <TableRow className="border-white/10">
                   <TableHead>Name</TableHead>
                   <TableHead>Rent</TableHead>
-                  <TableHead>Move-in Date</TableHead>
+                  <TableHead>Rent Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
               </TableHeader>
               <TableBody>
-                  {tenants?.map(tenant => (
-                  <TableRow key={tenant.id} className="border-white/10 hover:bg-primary/5">
-                      <TableCell className="font-medium">{tenant.name}</TableCell>
-                      <TableCell>{formatCurrency(tenant.rent)}</TableCell>
-                      <TableCell>{tenant.moveInDate ? new Date(tenant.moveInDate).toLocaleDateString() : 'N/A'}</TableCell>
-                      <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => handleEditTenant(tenant)}><Edit className="h-4 w-4" /></Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will permanently delete the tenant {tenant.name}. This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDeleteTenant(tenant.id)}>Delete</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                      </TableCell>
-                  </TableRow>
-                  ))}
+                  {tenants?.map(tenant => {
+                      const pendingMonths = getPendingMonths(tenant);
+                      return (
+                      <TableRow key={tenant.id} className="border-white/10 hover:bg-primary/5">
+                          <TableCell className="font-medium">
+                              {tenant.name}
+                              {pendingMonths > 0 && <Badge variant="destructive" className="ml-2">{pendingMonths} month{pendingMonths > 1 ? 's' : ''} pending</Badge>}
+                            </TableCell>
+                          <TableCell>{formatCurrency(tenant.rent)}</TableCell>
+                          <TableCell>{getRentStatus(tenant)}</TableCell>
+                          <TableCell className="text-right">
+                              <Button variant="ghost" size="icon" onClick={() => handleEditTenant(tenant)}><Edit className="h-4 w-4" /></Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This will permanently delete the tenant {tenant.name}. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeleteTenant(tenant.id)}>Delete</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                          </TableCell>
+                      </TableRow>
+                      )
+                    })}
               </TableBody>
               </Table>
               )}
@@ -278,7 +338,7 @@ export function PropertyDetailView({ property, onCloseDialog }: { property: With
             open={isTenantDialogOpen}
             onOpenChange={setIsTenantDialogOpen}
             onTenantUpdated={() => {
-              // Real-time listener in useCollection handles the update
+              forceRefetch();
             }}
           />
           <AddEditExpenseDialog
@@ -289,6 +349,11 @@ export function PropertyDetailView({ property, onCloseDialog }: { property: With
             onExpenseUpdated={() => {
               // Real-time listener in useCollection handles the update
             }}
+          />
+          <EditPropertyDialog 
+            property={property}
+            open={isPropertyDialogOpen}
+            onOpenChange={setIsPropertyDialogOpen}
           />
         </>
       )}

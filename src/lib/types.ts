@@ -1,3 +1,5 @@
+'use client';
+
 import { Timestamp } from "firebase/firestore";
 
 export type WithId<T> = T & { id: string };
@@ -11,6 +13,7 @@ export type Property = {
   updatedAt: Timestamp;
   status: 'active' | 'deleted';
   deletedAt?: Timestamp;
+  totalRent?: number;
   // These are populated from sub-collections
   tenants?: WithId<Tenant>[];
   expenseDetails?: WithId<Expense>[];
@@ -19,11 +22,12 @@ export type Property = {
 export type Tenant = {
   propertyId: string;
   name: string;
-  email: string;
+  email?: string;
   phone: string;
   rent: number;
   moveInDate: string;
   moveOutDate?: string;
+  payments?: { [key: string]: { date: string; } };
 };
 
 export type Expense = {
