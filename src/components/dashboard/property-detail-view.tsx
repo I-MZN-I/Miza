@@ -21,9 +21,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 const getMonthsInRange = (startDate: Date, endDate: Date) => {
     const months = [];
     let currentDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-    const lastDate = new Date(endDate.getFullYear(), endDate.getMonth() - 1, 1);
+    // Correctly calculate up to the month before the end date.
+    const lastPayableMonth = new Date(endDate.getFullYear(), endDate.getMonth(), 0);
 
-    while (currentDate <= lastDate) {
+    while (currentDate <= lastPayableMonth) {
         const year = currentDate.getFullYear();
         const month = String(currentDate.getMonth() + 1).padStart(2, '0');
         months.push(`${year}-${month}`);
@@ -101,12 +102,20 @@ export function PropertyDetailView({ property, onCloseDialog, viewMode = 'full' 
     onCloseDialog();
   }
   
+  const getPendingMonthsCount = (tenant: WithId<Tenant>) => {
+    if (!tenant.moveInDate) return 0;
+    const startDate = tenant.rentStartsFrom ? new Date(tenant.rentStartsFrom) : new Date(tenant.moveInDate);
+    const allMonthsDue = getMonthsInRange(startDate, new Date());
+    const unpaidMonths = allMonthsDue.filter(month => !tenant.payments?.[month]);
+    return unpaidMonths.length;
+  };
+  
   const handleRecordPayment = (tenant: WithId<Tenant>) => {
     if(!user || !property) return;
 
     const startDate = tenant.rentStartsFrom ? new Date(tenant.rentStartsFrom) : new Date(tenant.moveInDate);
-    const allMonths = getMonthsInRange(startDate, new Date());
-    const oldestUnpaidMonth = allMonths.find(month => !tenant.payments?.[month]);
+    const allMonthsDue = getMonthsInRange(startDate, new Date());
+    const oldestUnpaidMonth = allMonthsDue.find(month => !tenant.payments?.[month]);
     
     if (!oldestUnpaidMonth) {
         toast({ variant: 'destructive', title: 'No Pending Rent', description: 'This tenant is all caught up.'});
@@ -158,36 +167,55 @@ export function PropertyDetailView({ property, onCloseDialog, viewMode = 'full' 
   
   const formatCurrency = (value: number) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(value);
 
-  const getPendingMonths = (tenant: WithId<Tenant>) => {
-      if (!tenant.moveInDate) return 0;
-      const startDate = tenant.rentStartsFrom ? new Date(tenant.rentStartsFrom) : new Date(tenant.moveInDate);
-      const allMonths = getMonthsInRange(startDate, new Date());
-      const unpaidMonths = allMonths.filter(month => !tenant.payments?.[month]);
-      return unpaidMonths.length;
-  }
-
-  const getRentStatus = (tenant: WithId<Tenant>) => {
-    const today = new Date();
-    const lastMonthDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-    const lastMonthKey = `${lastMonthDate.getFullYear()}-${String(lastMonthDate.getMonth() + 1).padStart(2, '0')}`;
+  const getRentStatusDisplay = (tenant: WithId<Tenant>) => {
+    if (!tenant.moveInDate) return null;
+    
+    const pendingCount = getPendingMonthsCount(tenant);
+    if (pendingCount > 0) {
+      return <Badge variant="destructive">{pendingCount} month{pendingCount > 1 ? 's' : ''} pending</Badge>;
+    }
     
     const startDate = tenant.rentStartsFrom ? new Date(tenant.rentStartsFrom) : new Date(tenant.moveInDate);
-    if (startDate > lastMonthDate) {
-        return <Badge variant="secondary">New Tenant</Badge>;
+    const monthsDue = getMonthsInRange(startDate, new Date());
+    if (monthsDue.length === 0) {
+      return <Badge variant="secondary">New Tenant</Badge>;
     }
     
-    const paymentForLastMonth = tenant.payments?.[lastMonthKey];
-
-    if (paymentForLastMonth) {
-        return <Badge variant="secondary" className="bg-profit/20 text-profit">Paid</Badge>;
+    return <Badge variant="secondary" className="bg-profit/20 text-profit">Paid</Badge>;
+  };
+  
+  const getActionContent = (tenant: WithId<Tenant>) => {
+    if (viewMode === 'full') {
+      return (
+        <div className="flex justify-end">
+          <Button variant="ghost" size="icon" onClick={() => handleEditTenant(tenant)}><Edit className="h-4 w-4" /></Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete the tenant {tenant.name}. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => handleDeleteTenant(tenant.id)}>Delete</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      );
     }
     
-    if (viewMode === 'dashboard') {
-        return <Button size="sm" onClick={() => handleRecordPayment(tenant)}>Record Payment</Button>;
+    if (viewMode === 'dashboard' && getPendingMonthsCount(tenant) > 0) {
+      return <Button size="sm" onClick={() => handleRecordPayment(tenant)}>Record Payment</Button>;
     }
 
-    return <Badge variant="destructive">Pending</Badge>;
-  }
+    return null;
+  };
 
   const expensesToDisplay = viewMode === 'full' ? filteredExpenses : expenses;
 
@@ -215,48 +243,21 @@ export function PropertyDetailView({ property, onCloseDialog, viewMode = 'full' 
               <Table>
               <TableHeader>
                   <TableRow className="border-white/10">
-                  <TableHead>Name</TableHead>
-                  <TableHead>Rent</TableHead>
-                  <TableHead>Rent Status</TableHead>
-                   {viewMode === 'full' && <TableHead className="text-right">Actions</TableHead>}
+                    <TableHead>Name</TableHead>
+                    <TableHead>Rent</TableHead>
+                    <TableHead>Rent Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
               </TableHeader>
               <TableBody>
-                  {tenants?.map(tenant => {
-                      const pendingCount = getPendingMonths(tenant);
-                      return (
-                      <TableRow key={tenant.id} className="border-white/10 hover:bg-primary/5">
-                          <TableCell className="font-medium">
-                              {tenant.name}
-                              {pendingCount > 0 && <Badge variant="destructive" className="ml-2">{pendingCount} month{pendingCount > 1 ? 's' : ''} pending</Badge>}
-                            </TableCell>
-                          <TableCell>{formatCurrency(tenant.rent)}</TableCell>
-                          <TableCell>{getRentStatus(tenant)}</TableCell>
-                          {viewMode === 'full' && (
-                            <TableCell className="text-right">
-                                <Button variant="ghost" size="icon" onClick={() => handleEditTenant(tenant)}><Edit className="h-4 w-4" /></Button>
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        This will permanently delete the tenant {tenant.name}. This action cannot be undone.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleDeleteTenant(tenant.id)}>Delete</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                            </TableCell>
-                          )}
-                      </TableRow>
-                      )
-                    })}
+                  {tenants?.map(tenant => (
+                    <TableRow key={tenant.id} className="border-white/10 hover:bg-primary/5">
+                        <TableCell className="font-medium">{tenant.name}</TableCell>
+                        <TableCell>{formatCurrency(tenant.rent)}</TableCell>
+                        <TableCell>{getRentStatusDisplay(tenant)}</TableCell>
+                        <TableCell className="text-right">{getActionContent(tenant)}</TableCell>
+                    </TableRow>
+                  ))}
               </TableBody>
               </Table>
               )}
