@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { ArrowDown, ArrowUp, Bot, ChevronRight, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
 import type { Property, WithId } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { AnimatedCounter } from './AnimatedCounter';
 import { Area, AreaChart, CartesianGrid, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { ChartConfig, ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
@@ -26,8 +26,6 @@ const MOCK_EXPENSE_CATEGORIES = [
     { name: 'Misc', value: 2000, fill: 'hsl(var(--chart-5))'},
 ];
 const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-// --- SUB-COMPONENTS for the Sheet ---
 
 const PeriodSelector = ({ selected, onSelect }: { selected: Period; onSelect: (p: Period) => void }) => {
     const periods: Period[] = ['1M', '3M', '6M', '1Y', 'All'];
@@ -137,7 +135,6 @@ const KPIChip = ({ title, value, date }: { title: string, value: number, date: s
     </div>
 );
 
-// --- Expanded Sheet Component ---
 const AnalyticsSheetContent = ({ type, value, properties }: { type: AnalyticsType; value: number; properties: WithId<Property>[] | null }) => {
     const [period, setPeriod] = useState<Period>('6M');
 
@@ -188,7 +185,6 @@ const AnalyticsSheetContent = ({ type, value, properties }: { type: AnalyticsTyp
     );
 }
 
-// --- Collapsed Card Component ---
 const AnalyticsCard = ({ type, title, value, trend, onClick }: { type: AnalyticsType; title: string; value: number; trend: number; onClick: () => void; }) => {
     const cardDetails = {
         income: { glow: "shadow-profit/20", color: "text-profit", icon: TrendingUp },
@@ -218,7 +214,6 @@ const AnalyticsCard = ({ type, title, value, trend, onClick }: { type: Analytics
     );
 };
 
-// --- Main Export Component ---
 export function AnalyticsBar({ properties, isLoading }: { properties: WithId<Property>[] | null; isLoading: boolean }) {
     const [selectedCard, setSelectedCard] = useState<AnalyticsType | null>(null);
 
@@ -228,7 +223,6 @@ export function AnalyticsBar({ properties, isLoading }: { properties: WithId<Pro
         const income = properties.reduce((sum, p) => sum + (p.totalRent ?? 0), 0);
         const expenses = properties.reduce((sum, p) => sum + (p.totalExpenses ?? 0), 0);
 
-        // NOTE: Trend calculation is mocked. A real implementation would need historical data.
         return {
             totalIncome: income,
             totalExpenses: expenses,
@@ -272,6 +266,10 @@ export function AnalyticsBar({ properties, isLoading }: { properties: WithId<Pro
 
             <Sheet open={!!selectedCard} onOpenChange={(isOpen) => !isOpen && setSelectedCard(null)}>
                 <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl border-t-2 border-white/10 bg-card/80 p-0 backdrop-blur-xl">
+                    <SheetHeader className="sr-only">
+                        <SheetTitle>{selectedCard ? selectedCard.replace('-', ' ') : 'Analytics'}</SheetTitle>
+                        <SheetDescription>Detailed financial analytics for your properties.</SheetDescription>
+                    </SheetHeader>
                     <div className="absolute left-1/2 top-3 h-1.5 w-12 -translate-x-1/2 rounded-full bg-muted-foreground/50" />
                     <div className="h-full overflow-y-auto pt-8">
                        {selectedCard && (
