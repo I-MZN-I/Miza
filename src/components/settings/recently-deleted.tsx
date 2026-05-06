@@ -26,12 +26,14 @@ export function RecentlyDeleted() {
     const { data: deletedProperties, isLoading } = useCollection<Property>(deletedPropertiesQuery);
 
     const handleRestore = (property: WithId<Property>) => {
+        if (!user) return;
         const propertyDoc = doc(firestore, 'users', user.uid, 'properties', property.id);
         updateDocumentNonBlocking(propertyDoc, { status: 'active', deletedAt: null });
         toast({ title: 'Property Restored', description: `${property.buildingName} has been restored.` });
     };
 
     const handleDeleteForever = (property: WithId<Property>) => {
+        if (!user) return;
         const propertyDoc = doc(firestore, 'users', user.uid, 'properties', property.id);
         deleteDocumentNonBlocking(propertyDoc);
         toast({ variant: 'destructive', title: 'Property Deleted', description: `${property.buildingName} has been permanently deleted.` });
