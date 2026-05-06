@@ -61,7 +61,7 @@ Get an at-a-glance view of your active properties, pending tasks, expense summar
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/your-username/assetpro.git
+   git clone https://github.com/I-MZN-I/Miza.git
    cd assetpro
    ```
 
